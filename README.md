@@ -1,10 +1,12 @@
-## sysync
+## gomh - Get Off My Head
 
-sysync is a system configuration manager, like Puppet or Chef, but is declarative and deterministic.
+A simple game made in PyGame to illustrate programming principles as the feature complexity increases.
 
-This tool has 1.5+ years of managing a medium sized production system, but the deployment mechanism was scripted just for that environment.  I'll be working on making the deployment something that can be installed into any environment soon.
+Basic gameplay is using the arrow keys to move right/left, and up to jump.  Standing on another character's head will drain their life and eventually reset them.  If a character lands on your head, you can jump to bounce them off.
 
-So consider this not-yet-ready for your environment yet.  Also, no docs yet.  I have to write those up too.
+Inside the ./backups/ directory is a series of files named "sf_001.py" and increasing in number.  These are earlier versions of this code, which started from just displaying a static image on the screen, and later added input, and actors, and controls and AI.
 
-Also, I need to finish creating an exmaple conf system that demonstrates all the features without being too specific about the environment it was managing previously.
+The progression follows from the most basic kind of "straight down" procedural programming with naive variable names, and then adds in containers, functions and classes/objects later as the program becomes unwieldy.
+
+In this way, the reader can see how a program can evolve (and how the methods of programming historically evolved) from being simple and naive, to dealing with scaling problems with more encapsulation and abstraction.
 
