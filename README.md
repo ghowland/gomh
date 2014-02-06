@@ -10,3 +10,4 @@ The progression follows from the most basic kind of "straight down" procedural p
 
 In this way, the reader can see how a program can evolve (and how the methods of programming historically evolved) from being simple and naive, to dealing with scaling problems with more encapsulation and abstraction.
 
+![Example Screenshot]https://raw2.github.com/ghowland/gomh/master/docs/screenshot.png)
