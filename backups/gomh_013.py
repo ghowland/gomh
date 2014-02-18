@@ -3,8 +3,6 @@
 import pygame
 import sys
 import math
-import random
-
 
 SCALE = 0.5
 sprite_size = [int(85*SCALE), int(112*SCALE)]
@@ -13,7 +11,7 @@ sprite_size = [int(85*SCALE), int(112*SCALE)]
 pygame.init()
 SCREEN_SIZE = (640, 480)
 screen = pygame.display.set_mode(SCREEN_SIZE)
-pygame.display.set_caption('Street Figher 9')
+pygame.display.set_caption('Get Off My Head')
 #pygame.mouse.set_visible(0)
 
 # Create the background
@@ -56,14 +54,13 @@ for row in range(0, 4):
 
 
 class Actor:
-  def __init__(self, id, name, start_pos, speed, image_size, image_right, image_left):
+  def __init__(self, id, name, start_pos, image_size, image_right, image_left):
     print 'Creating Actor: %s: %s: %s' % (id, name, start_pos)
     
     # Specified information
     self.id = id
     self.name = name
     self.pos = start_pos
-    self.speed = speed
     self.image_size = image_size
     self.image_right = image_right
     self.image_left = image_left
@@ -72,7 +69,6 @@ class Actor:
     self.jump = 0
     self.fall = 1
     self.move_left = False
-    self.health = 10
 
   
   def __repr__(self):
@@ -117,10 +113,6 @@ class Actor:
 
   def Update(self):
     """Process all physics and junk"""
-    global PLAYER_ACTOR_ID
-    if self.id != PLAYER_ACTOR_ID:
-      self.UpdateNPC()
-    
     #TODO(g): Replace actor. with self., this is a short-cut
     actor = self
     
@@ -156,80 +148,6 @@ class Actor:
         if actor.jump <= 2:
           actor.jump = 0
 
-  
-  def UpdateNPC(self):
-    """Update Non-Playing Characters"""
-    #TODO(g): Rename actor. to self.
-    actor = self
-    
-    # Find targer actor (the closest)
-    target_actor = actor.FindClosestActor()
-    if target_actor == None:
-      raise Exception('WTF, is there only one?')
-    
-    # Player is to the Right
-    if actor.pos[0] < target_actor.pos[0]:
-      actor.move_left = False
-      [move_pos, collision_actor] = MovePosCollide(actor, [self.speed, 0], ACTORS, scene_mask)
-      if move_pos != actor.pos:
-        actor.pos = move_pos
-    
-    # Player is to the Left
-    elif actor.pos[0] > target_actor.pos[0]:
-      actor.move_left = True
-      [move_pos, collision_actor] = MovePosCollide(actor, [-self.speed, 0], ACTORS, scene_mask)
-      if move_pos != actor.pos:
-        actor.pos = move_pos
-    
-    # Try to jump, all the time
-    actor.Jump()
-
-
-  def Walk(self, move):
-    global ACTORS
-    global scene_mask
-    
-    # Determine facing position
-    if move[0] < 0:
-      self.move_left = True
-    else:
-      self.move_left = False
-      
-    [target_pos, collision_actor] = MovePosCollide(self, move, ACTORS, scene_mask)
-    # If no collision, move
-    if target_pos != self.pos:
-      self.pos = target_pos
-    
-    # Else, character collision, push them
-    elif collision_actor != None:
-      push = [move[0] * 2, move[1] * 2]
-      collision_actor.Walk(push)
-      collision_actor.Hit()
-
-
-  def Hit(self, points=2):
-    self.health -= points
-    if self.health < 0:
-      self.Respawn()
-  
-  
-  def Respawn(self):
-    global scene
-    
-    self.health = 10
-    
-    # Respawn anywhere in the map, at the fixed height
-    found_good_respawn_point = False
-    while not found_good_respawn_point:
-      respawn_x = random.randint(0, scene.get_width() - self.image_size[0])    
-      self.pos = [respawn_x, 130]
-      
-      #TODO(g): Could be colliding with scene, in a different scene than the test one
-      [target_pos, collision_actor] = MovePosCollide(self, [0,0], ACTORS, scene_mask)
-      if collision_actor == None:
-        found_good_respawn_point = True
-
-
   def Jump(self):
     global ACTORS
     global scene_mask
@@ -251,13 +169,6 @@ class Actor:
 # Create our actors
 ACTORS = []
 
-
-# Specify the player, so that we dont use NPC AI for it
-PLAYER_ACTOR_ID = 1
-PLAYER_ACTOR = None
-PLAYER_SPEED = 5
-NPC_SPEED = 3
-
 # Automatically load all the character
 for row in range(0, 4):
   for col in range(0, 4):
@@ -265,22 +176,22 @@ for row in range(0, 4):
     
     id = 4*row + col
     
-    # Determine speed (player or NPC)
-    if id == PLAYER_ACTOR_ID:
-      speed = PLAYER_SPEED
-    else:
-      speed = NPC_SPEED
-    
     # Only create this character if its not off the screen.  Thats a lot of characters anyway
     start_x = id * 150
     if len(ACTORS) < 6:
-      actor = Actor(id, 'Name: %s' % id, [start_x, 130], speed, sprite_size, animations[key][0], animations[key][1])
+      actor = Actor(id, 'Name: %s' % id, [start_x, 130], sprite_size, animations[key][0], animations[key][1])
       ACTORS.append(actor)
-      
-      # Set the player actor, by ID
-      if id == PLAYER_ACTOR_ID:
-        PLAYER_ACTOR = actor
 
+
+# Specify the player, so that we dont use NPC AI for it
+PLAYER_ACTOR_ID = 1
+
+# Find player actor
+PLAYER_ACTOR = None
+for actor in ACTORS:
+  if actor.id == PLAYER_ACTOR_ID:
+    PLAYER_ACTOR = actor
+    break
 if PLAYER_ACTOR == None:
   raise Exception('WTF?  Couldnt find the player actor, you didnt specify the ID correctly or didnt add the player actor in ACTORS')
 
@@ -486,6 +397,34 @@ def Draw(surface, target_surface, pos):
 while True:
   #print 'Actors: %s' % ACTORS
   
+  # Enemy AI
+  for actor in ACTORS:
+    # Skip the player, process everyone else
+    if actor.id == PLAYER_ACTOR_ID:
+      continue
+    
+    # Find targer actor (the closest)
+    target_actor = actor.FindClosestActor()
+    if target_actor == None:
+      raise Exception('WTF, is there only one?')
+    
+    # Player is to the Right
+    if actor.pos[0] < target_actor.pos[0]:
+      actor.move_left = False
+      [move_pos, collision_actor] = MovePosCollide(actor, [5, 0], ACTORS, scene_mask)
+      if move_pos != actor.pos:
+        actor.pos = move_pos
+    
+    # Player is to the Left
+    elif actor.pos[0] > target_actor.pos[0]:
+      actor.move_left = True
+      [move_pos, collision_actor] = MovePosCollide(actor, [-5, 0], ACTORS, scene_mask)
+      if move_pos != actor.pos:
+        actor.pos = move_pos
+    
+    # Try to jump, all the time
+    actor.Jump()
+
 
 
   # Event pump
@@ -498,17 +437,25 @@ while True:
   keys = pygame.key.get_pressed()  #checking pressed keys
   # Left
   if keys[pygame.K_LEFT]:
-    PLAYER_ACTOR.Walk([-5, 0])
-    # PLAYER_ACTOR.move_left = True
-    # [PLAYER_ACTOR.pos, collision_actor] = MovePosCollide(PLAYER_ACTOR, [-5, 0], ACTORS, scene_mask)
+    PLAYER_ACTOR.move_left = True
+    [PLAYER_ACTOR.pos, collision_actor] = MovePosCollide(PLAYER_ACTOR, [-5, 0], ACTORS, scene_mask)
   # Right
   if keys[pygame.K_RIGHT]:
-    PLAYER_ACTOR.Walk([5, 0])
-    # PLAYER_ACTOR.move_left = False
-    # [PLAYER_ACTOR.pos, collision_actor] = MovePosCollide(PLAYER_ACTOR, [5, 0], ACTORS, scene_mask)
+    PLAYER_ACTOR.move_left = False
+    [PLAYER_ACTOR.pos, collision_actor] = MovePosCollide(PLAYER_ACTOR, [5, 0], ACTORS, scene_mask)
   # Up
   if keys[pygame.K_UP]:
     PLAYER_ACTOR.Jump()
+    # [ground_test_pos, collision_actor] = MovePosCollide(PLAYER_ACTOR, [0, 1], ACTORS, scene_mask)
+    # # If we are free to jump
+    # if ground_test_pos == PLAYER_ACTOR.pos and PLAYER_ACTOR.jump == 0:
+    #   # Test if there is an actor (or obstacle) directly above us
+    #   [actor_on_head_test_pos, collision_actor] = MovePosCollide(PLAYER_ACTOR, [0, -1], ACTORS, scene_mask)
+    #   if actor_on_head_test_pos != PLAYER_ACTOR.pos:
+    #     PLAYER_ACTOR.jump = 17
+    #   # Else, if there was an actor standing on our head
+    #   elif collision_actor != None:
+    #     collision_actor.jump += 17
 
 
   # Update all our actors

@@ -55,8 +55,12 @@ for row in range(0, 4):
     animations[key] = [face_right, face_left]
 
 
+# Starting Health
+STARTING_HEALTH = 12
+HEALTH_GAINED_BY_KILL = 4
+
 class Actor:
-  def __init__(self, id, name, start_pos, speed, image_size, image_right, image_left):
+  def __init__(self, id, name, start_pos, speed, image_size, image_right, image_left, starting_health=STARTING_HEALTH):
     print 'Creating Actor: %s: %s: %s' % (id, name, start_pos)
     
     # Specified information
@@ -72,7 +76,9 @@ class Actor:
     self.jump = 0
     self.fall = 1
     self.move_left = False
-    self.health = 10
+    self.starting_health = starting_health
+    self.health = starting_health
+    self.kills = 0
 
   
   def __repr__(self):
@@ -134,6 +140,7 @@ class Actor:
       else:
         actor.fall = 1
 
+    # Process Jumping
     if actor.jump > 0:
       hit_the_roof = False
 
@@ -155,6 +162,25 @@ class Actor:
         actor.jump = actor.jump / 2
         if actor.jump <= 2:
           actor.jump = 0
+    
+    # Test you are standing on an actors head
+    [player_below_test_pos, collision_actor] = MovePosCollide(actor, [0, 1], ACTORS, scene_mask)
+    if player_below_test_pos == actor.pos and collision_actor != None:
+      #print 'Standing on player: %s --- %s' % (self, collision_actor)
+      killed_target = collision_actor.Hit(actor=self)
+    
+    
+    # Take Scene Damage (fire anyone?)
+    #TODO(g): Only testing right/left means that sitting in it or standing on it doesnt count, for every case
+    # Test Right
+    [damage_test_pos, collision_actor] = MovePosCollide(actor, [1, 0], ACTORS, scene_mask, scene_obstacle_color=(255,66,246))
+    if damage_test_pos == actor.pos:
+      self.Hit(1)
+    # Test Left
+    [damage_test_pos, collision_actor] = MovePosCollide(actor, [-1, 0], ACTORS, scene_mask, scene_obstacle_color=(255,66,246))
+    if damage_test_pos == actor.pos:
+      self.Hit(1)
+    
 
   
   def UpdateNPC(self):
@@ -167,25 +193,56 @@ class Actor:
     if target_actor == None:
       raise Exception('WTF, is there only one?')
     
-    # Player is to the Right
-    if actor.pos[0] < target_actor.pos[0]:
-      actor.move_left = False
-      [move_pos, collision_actor] = MovePosCollide(actor, [self.speed, 0], ACTORS, scene_mask)
-      if move_pos != actor.pos:
-        actor.pos = move_pos
+    # Starting AI state
+    toward_target = True
+    move_right = True
+    target_above_self = False
+    target_below_self = False
     
-    # Player is to the Left
-    elif actor.pos[0] > target_actor.pos[0]:
-      actor.move_left = True
-      [move_pos, collision_actor] = MovePosCollide(actor, [-self.speed, 0], ACTORS, scene_mask)
-      if move_pos != actor.pos:
-        actor.pos = move_pos
+    # Determine if the target is Far Away
+    dist = self.GetDistanceToActor(target_actor)
+    if dist > self.image_size[0] * 3:
+      target_far = True
+    else:
+      target_far = False
     
-    # Try to jump, all the time
-    actor.Jump()
+    # If above, by more than half your size, Move Away
+    if self.pos[1] > target_actor.pos[1]:
+      #print 'Actor Above Self: %s ----- %s' % (self, target_actor)
+      target_above_self = True
+
+    # If above, by more than half your size, Move Away
+    if self.pos[1] < target_actor.pos[1] + target_actor.image_size[1]:
+      #print 'Actor Below Self: %s ----- %s' % (self, target_actor)
+      target_below_self = True
+
+
+    # If the target is below, move the opposite direction -- Move Away
+    if target_above_self and not target_far:
+      if self.pos[0] > target_actor.pos[0]:
+        target_move = [self.speed, 0]
+      else:
+        target_move = [-self.speed, 0]
+    
+    # Else, target is close vertically -- Move Toward
+    else:
+      if self.pos[0] < target_actor.pos[0]:
+        target_move = [self.speed, 0]
+      else:
+        target_move = [-self.speed, 0]
+    
+    
+    # Move specified amount
+    blocked_by_scene = self.Walk(target_move)
+    
+    
+    # If we want to jump
+    if target_above_self or blocked_by_scene:
+      actor.Jump()
 
 
   def Walk(self, move):
+    """Returns boolean, True if collision with scene"""
     global ACTORS
     global scene_mask
     
@@ -194,7 +251,9 @@ class Actor:
       self.move_left = True
     else:
       self.move_left = False
-      
+    
+    scene_collision = False
+    
     [target_pos, collision_actor] = MovePosCollide(self, move, ACTORS, scene_mask)
     # If no collision, move
     if target_pos != self.pos:
@@ -204,19 +263,37 @@ class Actor:
     elif collision_actor != None:
       push = [move[0] * 2, move[1] * 2]
       collision_actor.Walk(push)
-      collision_actor.Hit()
+    
+    # Else, hit a wall
+    else:
+      scene_collision = True
+    
+    # Return boolean on whether could walk, blocked by scene
+    return scene_collision
 
 
-  def Hit(self, points=2):
+
+  def Hit(self, points=1, actor=None):
+    """Returns boolean, True if actor was killed"""
     self.health -= points
+    
     if self.health < 0:
       self.Respawn()
+      
+      # If an actor did this, give them the health bonus
+      if actor != None:
+        actor.health += HEALTH_GAINED_BY_KILL
+      
+      return True
+    
+    else:
+      return False
   
   
   def Respawn(self):
     global scene
     
-    self.health = 10
+    self.health = self.starting_health
     
     # Respawn anywhere in the map, at the fixed height
     found_good_respawn_point = False
@@ -253,10 +330,12 @@ ACTORS = []
 
 
 # Specify the player, so that we dont use NPC AI for it
-PLAYER_ACTOR_ID = 1
+PLAYER_ACTOR_ID = 0
 PLAYER_ACTOR = None
 PLAYER_SPEED = 5
 NPC_SPEED = 3
+TOTAL_ACTORS = 6
+#TOTAL_ACTORS = 2
 
 # Automatically load all the character
 for row in range(0, 4):
@@ -272,8 +351,8 @@ for row in range(0, 4):
       speed = NPC_SPEED
     
     # Only create this character if its not off the screen.  Thats a lot of characters anyway
-    start_x = id * 150
-    if len(ACTORS) < 6:
+    start_x = id * 150 + 220
+    if len(ACTORS) < TOTAL_ACTORS:
       actor = Actor(id, 'Name: %s' % id, [start_x, 130], speed, sprite_size, animations[key][0], animations[key][1])
       ACTORS.append(actor)
       
@@ -370,7 +449,7 @@ def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_col
 def MovePosCollide(actor, move, all_actors, scene_image, scene_obstacle_color=(255,255,255), log=False):
   """Collision with actors and scene"""
   # Collision with scene
-  scene_pos = MovePosCollideWithScene(actor.pos, move, actor.image_size, scene_image, scene_obstacle_color=(255,255,255), log=log)
+  scene_pos = MovePosCollideWithScene(actor.pos, move, actor.image_size, scene_image, scene_obstacle_color=scene_obstacle_color, log=log)
   if scene_pos == actor.pos:
     scene_collision = True
   else:
@@ -437,7 +516,7 @@ def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obs
   # Test scene, if we havent already found a collision with the scene border
   if not has_collision:
     # Test every N pixels, to not miss collisions that are smaller than the bounding box
-    step_test = 1
+    step_test = 2
     
     #TODO(g): Collision detection with scene_image
     # Make all 4 corners of the bounding box
@@ -450,13 +529,13 @@ def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obs
       print ''
 
     # Test the bounding box, using step (N pixels) to get better resolution on obstacle collision
-    if TestCollisionByPixelStep(corner_top_left, corner_top_right, step_test, scene_image, log=log):
+    if TestCollisionByPixelStep(corner_top_left, corner_top_right, step_test, scene_image, scene_obstacle_color=scene_obstacle_color, log=log):
       has_collision = True
-    elif TestCollisionByPixelStep(corner_top_left, corner_bottom_left, step_test, scene_image, log=log):
+    elif TestCollisionByPixelStep(corner_top_left, corner_bottom_left, step_test, scene_image, scene_obstacle_color=scene_obstacle_color, log=log):
       has_collision = True
-    elif TestCollisionByPixelStep(corner_top_right, corner_bottom_right, step_test, scene_image, log=log):
+    elif TestCollisionByPixelStep(corner_top_right, corner_bottom_right, step_test, scene_image, scene_obstacle_color=scene_obstacle_color, log=log):
       has_collision = True
-    elif TestCollisionByPixelStep(corner_bottom_left, corner_bottom_right, step_test, scene_image, log=log):
+    elif TestCollisionByPixelStep(corner_bottom_left, corner_bottom_right, step_test, scene_image, scene_obstacle_color=scene_obstacle_color, log=log):
       has_collision = True
 
 
@@ -483,9 +562,15 @@ def Draw(surface, target_surface, pos):
   target_surface.blit(surface, GetPosScrolled(pos))
 
 
+cur_time = pygame.time.get_ticks()
 while True:
   #print 'Actors: %s' % ACTORS
-  
+  last_time = cur_time
+  cur_time = pygame.time.get_ticks()
+  ellapsed_time = cur_time - last_time
+  if ellapsed_time:
+    fps = 1000 / ellapsed_time
+    #print 'FPS: %s' % fps
 
 
   # Event pump
@@ -527,13 +612,23 @@ while True:
   scroll_by_pixels = 3
   # Left screen boundary
   if PLAYER_ACTOR.pos[0] < scrolled_screen_x[0] + boundary_x:
-    SCROLL_OFFSET[0] -= scroll_by_pixels
+    # Scroll faster if player is off the screen
+    if PLAYER_ACTOR.pos[0] < SCROLL_OFFSET[0]:
+      SCROLL_OFFSET[0] -= scroll_by_pixels * 3
+    else:
+      SCROLL_OFFSET[0] -= scroll_by_pixels
+      
     if SCROLL_OFFSET[0] < 0:
       SCROLL_OFFSET[0] = 0
   
   # Right screen boundary
   elif PLAYER_ACTOR.pos[0] > scrolled_screen_x[1] - boundary_x:
-    SCROLL_OFFSET[0] += scroll_by_pixels
+    # Scroll faster if player is off the screen
+    if PLAYER_ACTOR.pos[0] > SCROLL_OFFSET[0]:
+      SCROLL_OFFSET[0] += scroll_by_pixels * 3
+    else:
+      SCROLL_OFFSET[0] += scroll_by_pixels
+    
     max_scroll_x = scene.get_width() - SCREEN_SIZE[0]
     if SCROLL_OFFSET[0] >= max_scroll_x:
       SCROLL_OFFSET[0] = max_scroll_x
@@ -547,6 +642,9 @@ while True:
   for actor in ACTORS:
     Draw(actor.GetSurface(), background, actor.pos)
   
+  # Draw UI
+  # Draw Player Health Bar
+  pygame.draw.rect(background, (240,240,240), pygame.rect.Rect((40, 40), (PLAYER_ACTOR.health * 5, 20)))
 
   # Render to screen   
   screen.blit(background, (0,0))

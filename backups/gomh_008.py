@@ -3,13 +3,12 @@
 import pygame
 import sys
 
-#sprite_size = [85, 112]
 sprite_size = [85/2, 112/2]
 
 pygame.init()
-SCREEN_SIZE = (640, 480)
-screen = pygame.display.set_mode(SCREEN_SIZE)
-pygame.display.set_caption('Street Figher 9')
+size = (640, 480)
+screen = pygame.display.set_mode(size)
+pygame.display.set_caption('Get Off My Head')
 #pygame.mouse.set_visible(0)
 
 
@@ -39,8 +38,6 @@ background.fill((0, 0, 0))
 guy0_pos = [300, 130]
 guy1_pos = [220, 130]
 
-# Scrolling here.  X and Y (Y to be implemented later...)
-SCROLL_OFFSET = [0, 0]
 
 def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_color=(255,255,255), log=False):
   """Test for a collision against the scene, starting at start_pos, ending at end_pos, using step to increment.
@@ -211,18 +208,6 @@ def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obs
   return final_pos
 
 
-def GetPosScrolled(pos):
-  global SCROLL_OFFSET
-  
-  scrolled_pos = [pos[0] - SCROLL_OFFSET[0], pos[1] - SCROLL_OFFSET[1]]
-  
-  return scrolled_pos
-
-
-def Draw(surface, target_surface, pos):
-  target_surface.blit(surface, GetPosScrolled(pos))
-
-
 # Left/Right?  GHETTO CODE!
 guy0_move_left = False
 guy1_move_left = False
@@ -234,18 +219,10 @@ guy1_fall = 1
 while True:
   if guy0_pos[0] < guy1_pos[0]:
     guy0_move_left = False
-    move_pos = MovePosCollideWithScene(guy0_pos, [5, 0], sprite_size, scene_mask)
-    if move_pos == guy0_pos and guy0_jump == 0:
-      guy0_jump = 17
-    else:
-      guy0_pos = move_pos
+    guy0_pos = MovePosCollideWithScene(guy0_pos, [5, 0], sprite_size, scene_mask)
   elif guy0_pos[0] > guy1_pos[0]:
     guy0_move_left = True
-    move_pos = MovePosCollideWithScene(guy0_pos, [-5, 0], sprite_size, scene_mask)
-    if move_pos == guy0_pos and guy0_jump == 0:
-      guy0_jump = 17
-    else:
-      guy0_pos = move_pos
+    guy0_pos = MovePosCollideWithScene(guy0_pos, [-5, 0], sprite_size, scene_mask)
 
   # Fall, if you can
   if guy0_jump == 0:
@@ -256,14 +233,17 @@ while True:
         guy0_fall += 1
     else:
       guy0_fall = 1
+
+  # if guy0_pos[1] < guy1_pos[1]:
+  #   guy0_pos = MovePosCollideWithScene(guy0_pos, [0, 1], sprite_size, scene_mask)
+  # elif guy0_pos[1] > guy1_pos[1]:
+  #   guy0_pos = MovePosCollideWithScene(guy0_pos, [0, -1], sprite_size, scene_mask)
   
 
-  # Event pump
   for event in pygame.event.get(): 
     if event.type == pygame.QUIT: 
           sys.exit(0) 
 
-  # Player input handling
   keys = pygame.key.get_pressed()  #checking pressed keys
   if keys[pygame.K_LEFT]:
     guy1_move_left = True
@@ -289,7 +269,7 @@ while True:
     else:
       guy1_fall = 1
 
-  # Test for jumping (guy1)
+  # Test for jumping
   if guy1_jump > 0:
     hit_the_roof = False
     
@@ -312,73 +292,27 @@ while True:
       if guy1_jump <= 2:
         guy1_jump = 0
 
-
-  # Test for jumping (guy0)
-  if guy0_jump > 0:
-    hit_the_roof = False
-
-    for count in range(0, guy0_jump):
-      jump_pos = MovePosCollideWithScene(guy0_pos, [0, -1], sprite_size, scene_mask)
-
-      # If we hit a ceiling, dont immediately cancell the jump, but reduce it quickly (gives a sense of upward inertia)
-      if jump_pos == guy0_pos:
-        hit_the_roof = True
-        break
-      # Update the new position, cause we didnt hit the roof
-      else:
-        guy0_pos = jump_pos
-
-    # Reduce the jump each frame
-    if not hit_the_roof:
-      guy0_jump -= 1
-    else:
-      guy0_jump = guy0_jump / 2
-      if guy0_jump <= 2:
-        guy0_jump = 0
-
   
   # If ESC is hit, quit
   if keys[pygame.K_ESCAPE]:
     sys.exit(0)
 
 
-  # Handle scrolling the world
-  # global SCROLL_OFFSET
-  # global SCREEN_SIZE
-  scrolled_screen_x = [SCROLL_OFFSET[0], SCROLL_OFFSET[0] + SCREEN_SIZE[0]]
-  boundary_x = int(SCREEN_SIZE[0] / 2.5)
-  scroll_by_pixels = 3
-  if guy1_pos[0] < scrolled_screen_x[0] + boundary_x:
-    SCROLL_OFFSET[0] -= scroll_by_pixels
-    if SCROLL_OFFSET[0] < 0:
-      SCROLL_OFFSET[0] = 0
-  elif guy1_pos[0] > scrolled_screen_x[1] - boundary_x:
-    SCROLL_OFFSET[0] += scroll_by_pixels
-    max_scroll_x = scene.get_width() - SCREEN_SIZE[0]
-    if SCROLL_OFFSET[0] >= max_scroll_x:
-      SCROLL_OFFSET[0] = max_scroll_x
-
-
   # Render background
   #background.fill((0, 0, 0))
-  #background.blit(scene, (0, 0))
-  Draw(scene, background, (0,0))
+  background.blit(scene, (0, 0))
   
   # Draw guy0 moving left or right (ghetto method)
   if not guy0_move_left:
-    #background.blit(guy0, guy0_pos)
-    Draw(guy0, background, guy0_pos)
+    background.blit(guy0, guy0_pos)
   else:
-    #background.blit(guy0_left, guy0_pos)
-    Draw(guy0_left, background, guy0_pos)
+    background.blit(guy0_left, guy0_pos)
 
   # Draw guy1 moving left or right (ghetto method)
   if not guy1_move_left:
-    #background.blit(guy1, guy1_pos)
-    Draw(guy1, background, guy1_pos)
+    background.blit(guy1, guy1_pos)
   else:
-    #background.blit(guy1_left, guy1_pos)
-    Draw(guy1_left, background, guy1_pos)
+    background.blit(guy1_left, guy1_pos)
   
 
 

@@ -55,12 +55,8 @@ for row in range(0, 4):
     animations[key] = [face_right, face_left]
 
 
-# Starting Health
-STARTING_HEALTH = 12
-HEALTH_GAINED_BY_KILL = 4
-
 class Actor:
-  def __init__(self, id, name, start_pos, speed, image_size, image_right, image_left, starting_health=STARTING_HEALTH):
+  def __init__(self, id, name, start_pos, speed, image_size, image_right, image_left):
     print 'Creating Actor: %s: %s: %s' % (id, name, start_pos)
     
     # Specified information
@@ -76,9 +72,7 @@ class Actor:
     self.jump = 0
     self.fall = 1
     self.move_left = False
-    self.starting_health = starting_health
-    self.health = starting_health
-    self.kills = 0
+    self.health = 10
 
   
   def __repr__(self):
@@ -162,12 +156,6 @@ class Actor:
         actor.jump = actor.jump / 2
         if actor.jump <= 2:
           actor.jump = 0
-    
-    # Test you are standing on an actors head
-    [player_below_test_pos, collision_actor] = MovePosCollide(actor, [0, 1], ACTORS, scene_mask)
-    if player_below_test_pos == actor.pos and collision_actor != None:
-      #print 'Standing on player: %s --- %s' % (self, collision_actor)
-      killed_target = collision_actor.Hit(actor=self)
     
     
     # Take Scene Damage (fire anyone?)
@@ -263,6 +251,7 @@ class Actor:
     elif collision_actor != None:
       push = [move[0] * 2, move[1] * 2]
       collision_actor.Walk(push)
+      collision_actor.Hit()
     
     # Else, hit a wall
     else:
@@ -273,27 +262,16 @@ class Actor:
 
 
 
-  def Hit(self, points=1, actor=None):
-    """Returns boolean, True if actor was killed"""
+  def Hit(self, points=2):
     self.health -= points
-    
     if self.health < 0:
       self.Respawn()
-      
-      # If an actor did this, give them the health bonus
-      if actor != None:
-        actor.health += HEALTH_GAINED_BY_KILL
-      
-      return True
-    
-    else:
-      return False
   
   
   def Respawn(self):
     global scene
     
-    self.health = self.starting_health
+    self.health = 10
     
     # Respawn anywhere in the map, at the fixed height
     found_good_respawn_point = False
@@ -516,7 +494,7 @@ def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obs
   # Test scene, if we havent already found a collision with the scene border
   if not has_collision:
     # Test every N pixels, to not miss collisions that are smaller than the bounding box
-    step_test = 2
+    step_test = 1
     
     #TODO(g): Collision detection with scene_image
     # Make all 4 corners of the bounding box
@@ -562,15 +540,9 @@ def Draw(surface, target_surface, pos):
   target_surface.blit(surface, GetPosScrolled(pos))
 
 
-cur_time = pygame.time.get_ticks()
 while True:
   #print 'Actors: %s' % ACTORS
-  last_time = cur_time
-  cur_time = pygame.time.get_ticks()
-  ellapsed_time = cur_time - last_time
-  if ellapsed_time:
-    fps = 1000 / ellapsed_time
-    #print 'FPS: %s' % fps
+  
 
 
   # Event pump
@@ -642,9 +614,6 @@ while True:
   for actor in ACTORS:
     Draw(actor.GetSurface(), background, actor.pos)
   
-  # Draw UI
-  # Draw Player Health Bar
-  pygame.draw.rect(background, (240,240,240), pygame.rect.Rect((40, 40), (PLAYER_ACTOR.health * 5, 20)))
 
   # Render to screen   
   screen.blit(background, (0,0))

@@ -3,8 +3,6 @@
 import pygame
 import sys
 import math
-import random
-
 
 SCALE = 0.5
 sprite_size = [int(85*SCALE), int(112*SCALE)]
@@ -13,7 +11,7 @@ sprite_size = [int(85*SCALE), int(112*SCALE)]
 pygame.init()
 SCREEN_SIZE = (640, 480)
 screen = pygame.display.set_mode(SCREEN_SIZE)
-pygame.display.set_caption('Street Figher 9')
+pygame.display.set_caption('Get Off My Head')
 #pygame.mouse.set_visible(0)
 
 # Create the background
@@ -72,7 +70,6 @@ class Actor:
     self.jump = 0
     self.fall = 1
     self.move_left = False
-    self.health = 10
 
   
   def __repr__(self):
@@ -134,7 +131,6 @@ class Actor:
       else:
         actor.fall = 1
 
-    # Process Jumping
     if actor.jump > 0:
       hit_the_roof = False
 
@@ -156,19 +152,6 @@ class Actor:
         actor.jump = actor.jump / 2
         if actor.jump <= 2:
           actor.jump = 0
-    
-    
-    # Take Scene Damage (fire anyone?)
-    #TODO(g): Only testing right/left means that sitting in it or standing on it doesnt count, for every case
-    # Test Right
-    [damage_test_pos, collision_actor] = MovePosCollide(actor, [1, 0], ACTORS, scene_mask, scene_obstacle_color=(255,66,246))
-    if damage_test_pos == actor.pos:
-      self.Hit(1)
-    # Test Left
-    [damage_test_pos, collision_actor] = MovePosCollide(actor, [-1, 0], ACTORS, scene_mask, scene_obstacle_color=(255,66,246))
-    if damage_test_pos == actor.pos:
-      self.Hit(1)
-    
 
   
   def UpdateNPC(self):
@@ -181,47 +164,22 @@ class Actor:
     if target_actor == None:
       raise Exception('WTF, is there only one?')
     
-    # Starting AI state
-    toward_target = True
-    move_right = True
-    target_far = True
-    
-    # If above, by more than half your size, Move Away
-    if self.pos[1] < target_actor.pos[1]:
-      #print 'Above Target 1: %s - %s' % (self, target_actor)
-      toward_target = False
-    
-    # If above, by more than half your size, Move Away
-    if self.pos[1] > target_actor.pos[1] + target_actor.image_size[1]:
-      #print 'Below Target 1: %s - %s' % (self, target_actor)
-      toward_target = False
-
-    # Determine if the target is Far Away
-    dist = self.GetDistanceToActor(target_actor)
-    if dist > self.image_size[0] * 2:
-      target_far = True
-    else:
-      target_far = False
-    
-    # Test direction, flip if moving away from the target
-    if self.pos[0] < target_actor.pos[0] and toward_target:
-      move_right = True
-    else:
-      move_right = False
-    
     # Player is to the Right
-    if move_right:
-      target_move = [self.speed, 0]
+    if actor.pos[0] < target_actor.pos[0]:
+      actor.move_left = False
+      [move_pos, collision_actor] = MovePosCollide(actor, [self.speed, 0], ACTORS, scene_mask)
+      if move_pos != actor.pos:
+        actor.pos = move_pos
     
     # Player is to the Left
-    else:
-      target_move = [-self.speed, 0]
+    elif actor.pos[0] > target_actor.pos[0]:
+      actor.move_left = True
+      [move_pos, collision_actor] = MovePosCollide(actor, [-self.speed, 0], ACTORS, scene_mask)
+      if move_pos != actor.pos:
+        actor.pos = move_pos
     
-    self.Walk(target_move)
-    
-    # If the target is far from this NPC
-    if target_far:
-      actor.Jump()
+    # Try to jump, all the time
+    actor.Jump()
 
 
   def Walk(self, move):
@@ -243,30 +201,6 @@ class Actor:
     elif collision_actor != None:
       push = [move[0] * 2, move[1] * 2]
       collision_actor.Walk(push)
-      collision_actor.Hit()
-
-
-  def Hit(self, points=2):
-    self.health -= points
-    if self.health < 0:
-      self.Respawn()
-  
-  
-  def Respawn(self):
-    global scene
-    
-    self.health = 10
-    
-    # Respawn anywhere in the map, at the fixed height
-    found_good_respawn_point = False
-    while not found_good_respawn_point:
-      respawn_x = random.randint(0, scene.get_width() - self.image_size[0])    
-      self.pos = [respawn_x, 130]
-      
-      #TODO(g): Could be colliding with scene, in a different scene than the test one
-      [target_pos, collision_actor] = MovePosCollide(self, [0,0], ACTORS, scene_mask)
-      if collision_actor == None:
-        found_good_respawn_point = True
 
 
   def Jump(self):
@@ -292,12 +226,10 @@ ACTORS = []
 
 
 # Specify the player, so that we dont use NPC AI for it
-PLAYER_ACTOR_ID = 0
+PLAYER_ACTOR_ID = 1
 PLAYER_ACTOR = None
 PLAYER_SPEED = 5
 NPC_SPEED = 3
-#TOTAL_ACTORS = 6
-TOTAL_ACTORS = 3
 
 # Automatically load all the character
 for row in range(0, 4):
@@ -313,8 +245,8 @@ for row in range(0, 4):
       speed = NPC_SPEED
     
     # Only create this character if its not off the screen.  Thats a lot of characters anyway
-    start_x = id * 150 + 220
-    if len(ACTORS) < TOTAL_ACTORS:
+    start_x = id * 150
+    if len(ACTORS) < 6:
       actor = Actor(id, 'Name: %s' % id, [start_x, 130], speed, sprite_size, animations[key][0], animations[key][1])
       ACTORS.append(actor)
       
@@ -411,7 +343,7 @@ def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_col
 def MovePosCollide(actor, move, all_actors, scene_image, scene_obstacle_color=(255,255,255), log=False):
   """Collision with actors and scene"""
   # Collision with scene
-  scene_pos = MovePosCollideWithScene(actor.pos, move, actor.image_size, scene_image, scene_obstacle_color=scene_obstacle_color, log=log)
+  scene_pos = MovePosCollideWithScene(actor.pos, move, actor.image_size, scene_image, scene_obstacle_color=(255,255,255), log=log)
   if scene_pos == actor.pos:
     scene_collision = True
   else:
@@ -491,13 +423,13 @@ def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obs
       print ''
 
     # Test the bounding box, using step (N pixels) to get better resolution on obstacle collision
-    if TestCollisionByPixelStep(corner_top_left, corner_top_right, step_test, scene_image, scene_obstacle_color=scene_obstacle_color, log=log):
+    if TestCollisionByPixelStep(corner_top_left, corner_top_right, step_test, scene_image, log=log):
       has_collision = True
-    elif TestCollisionByPixelStep(corner_top_left, corner_bottom_left, step_test, scene_image, scene_obstacle_color=scene_obstacle_color, log=log):
+    elif TestCollisionByPixelStep(corner_top_left, corner_bottom_left, step_test, scene_image, log=log):
       has_collision = True
-    elif TestCollisionByPixelStep(corner_top_right, corner_bottom_right, step_test, scene_image, scene_obstacle_color=scene_obstacle_color, log=log):
+    elif TestCollisionByPixelStep(corner_top_right, corner_bottom_right, step_test, scene_image, log=log):
       has_collision = True
-    elif TestCollisionByPixelStep(corner_bottom_left, corner_bottom_right, step_test, scene_image, scene_obstacle_color=scene_obstacle_color, log=log):
+    elif TestCollisionByPixelStep(corner_bottom_left, corner_bottom_right, step_test, scene_image, log=log):
       has_collision = True
 
 
@@ -568,23 +500,13 @@ while True:
   scroll_by_pixels = 3
   # Left screen boundary
   if PLAYER_ACTOR.pos[0] < scrolled_screen_x[0] + boundary_x:
-    # Scroll faster if player is off the screen
-    if PLAYER_ACTOR.pos[0] < SCROLL_OFFSET[0]:
-      SCROLL_OFFSET[0] -= scroll_by_pixels * 3
-    else:
-      SCROLL_OFFSET[0] -= scroll_by_pixels
-      
+    SCROLL_OFFSET[0] -= scroll_by_pixels
     if SCROLL_OFFSET[0] < 0:
       SCROLL_OFFSET[0] = 0
   
   # Right screen boundary
   elif PLAYER_ACTOR.pos[0] > scrolled_screen_x[1] - boundary_x:
-    # Scroll faster if player is off the screen
-    if PLAYER_ACTOR.pos[0] > SCROLL_OFFSET[0]:
-      SCROLL_OFFSET[0] += scroll_by_pixels * 3
-    else:
-      SCROLL_OFFSET[0] += scroll_by_pixels
-    
+    SCROLL_OFFSET[0] += scroll_by_pixels
     max_scroll_x = scene.get_width() - SCREEN_SIZE[0]
     if SCROLL_OFFSET[0] >= max_scroll_x:
       SCROLL_OFFSET[0] = max_scroll_x

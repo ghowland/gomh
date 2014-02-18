@@ -12,8 +12,6 @@ pygame.display.set_caption('Get Off My Head')
 #pygame.mouse.set_visible(0)
 
 
-scene = pygame.image.load('sf_back.png')
-
 background = pygame.Surface(screen.get_size())
 background = background.convert()
 background.fill((0, 0, 0))
@@ -25,8 +23,7 @@ while True:
 
 
   # Render background
-  #background.fill((0, 0, 0))
-  background.blit(scene, (0, 0))
+  background.fill((0, 0, 0))
 
   # Render to screen   
   screen.blit(background, (0,0))

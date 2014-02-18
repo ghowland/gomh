@@ -3,13 +3,12 @@
 import pygame
 import sys
 
-#sprite_size = [85, 112]
 sprite_size = [85/2, 112/2]
 
 pygame.init()
 size = (640, 480)
 screen = pygame.display.set_mode(size)
-pygame.display.set_caption('Street Figher 9')
+pygame.display.set_caption('Get Off My Head')
 #pygame.mouse.set_visible(0)
 
 
@@ -25,19 +24,17 @@ scene_mask = pygame.image.load('sf_back_mask.png')
 guy0 = pygame.Surface(sprite_size)
 guy0.convert_alpha() 
 guy0.blit(sf_sprites, (0,0), [0, 0, sprite_size[0], sprite_size[1]])
-guy0_left = pygame.transform.flip(guy0, True, False)
 
 guy1 = pygame.Surface(sprite_size)
 guy1.convert_alpha() 
 guy1.blit(sf_sprites, (0,0), [sprite_size[0] * 1, sprite_size[1] * 0, sprite_size[0], sprite_size[1]])
-guy1_left = pygame.transform.flip(guy1, True, False)
 
 background = pygame.Surface(screen.get_size())
 background = background.convert()
 background.fill((0, 0, 0))
 
-guy0_pos = [300, 130]
-guy1_pos = [220, 130]
+guy0_pos = [300, 150]
+guy1_pos = [360, 100]
 
 
 def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_color=(255,255,255), log=False):
@@ -209,31 +206,14 @@ def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obs
   return final_pos
 
 
-# Left/Right?  GHETTO CODE!
-guy0_move_left = False
-guy1_move_left = False
-guy0_jump = 0
-guy1_jump = 0
-guy0_fall = 1
-guy1_fall = 1
-
 while True:
-  if guy0_pos[0] < guy1_pos[0]:
-    guy0_move_left = False
-    guy0_pos = MovePosCollideWithScene(guy0_pos, [5, 0], sprite_size, scene_mask)
-  elif guy0_pos[0] > guy1_pos[0]:
-    guy0_move_left = True
-    guy0_pos = MovePosCollideWithScene(guy0_pos, [-5, 0], sprite_size, scene_mask)
+  background.blit(guy0, guy0_pos)
+  background.blit(guy1, guy1_pos)
 
-  # Fall, if you can
-  if guy0_jump == 0:
-    fall_pos = MovePosCollideWithScene(guy0_pos, [0, guy0_fall], sprite_size, scene_mask)
-    if fall_pos != guy0_pos:
-      guy0_pos = fall_pos
-      if guy0_fall < 10:
-        guy0_fall += 1
-    else:
-      guy0_fall = 1
+  if guy0_pos[0] < guy1_pos[0]:
+	  guy0_pos = MovePosCollideWithScene(guy0_pos, [1, 0], sprite_size, scene_mask)
+  elif guy0_pos[0] > guy1_pos[0]:
+	  guy0_pos = MovePosCollideWithScene(guy0_pos, [-1, 0], sprite_size, scene_mask)
 
   # if guy0_pos[1] < guy1_pos[1]:
   #   guy0_pos = MovePosCollideWithScene(guy0_pos, [0, 1], sprite_size, scene_mask)
@@ -247,52 +227,13 @@ while True:
 
   keys = pygame.key.get_pressed()  #checking pressed keys
   if keys[pygame.K_LEFT]:
-    guy1_move_left = True
-    guy1_pos = MovePosCollideWithScene(guy1_pos, [-5, 0], sprite_size, scene_mask)
+    guy1_pos = MovePosCollideWithScene(guy1_pos, [-2, 0], sprite_size, scene_mask)
   if keys[pygame.K_RIGHT]:
-    guy1_move_left = False
-    guy1_pos = MovePosCollideWithScene(guy1_pos, [5, 0], sprite_size, scene_mask)
-  if keys[pygame.K_UP]:
-    ground_test_pos = MovePosCollideWithScene(guy1_pos, [0, 1], sprite_size, scene_mask)
-    if ground_test_pos == guy1_pos and guy1_jump == 0:
-      guy1_jump = 17
-
+    guy1_pos = MovePosCollideWithScene(guy1_pos, [2, 0], sprite_size, scene_mask)
+  # if keys[pygame.K_UP]:
+  #   guy1_pos = MovePosCollideWithScene(guy1_pos, [0, -2], sprite_size, scene_mask)
   # if keys[pygame.K_DOWN]:
   #   guy1_pos = MovePosCollideWithScene(guy1_pos, [0, 2], sprite_size, scene_mask)
-  
-  # Fall, if you can
-  if guy1_jump == 0:
-    fall_pos = MovePosCollideWithScene(guy1_pos, [0, guy1_fall], sprite_size, scene_mask)
-    if fall_pos != guy1_pos:
-      guy1_pos = fall_pos
-      if guy1_fall < 10:
-        guy1_fall += 1
-    else:
-      guy1_fall = 1
-
-  # Test for jumping
-  if guy1_jump > 0:
-    hit_the_roof = False
-    
-    for count in range(0, guy1_jump):
-      jump_pos = MovePosCollideWithScene(guy1_pos, [0, -1], sprite_size, scene_mask)
-    
-      # If we hit a ceiling, dont immediately cancell the jump, but reduce it quickly (gives a sense of upward inertia)
-      if jump_pos == guy1_pos:
-        hit_the_roof = True
-        break
-      # Update the new position, cause we didnt hit the roof
-      else:
-        guy1_pos = jump_pos
-    
-    # Reduce the jump each frame
-    if not hit_the_roof:
-      guy1_jump -= 1
-    else:
-      guy1_jump = guy1_jump / 2
-      if guy1_jump <= 2:
-        guy1_jump = 0
-
   
   # If ESC is hit, quit
   if keys[pygame.K_ESCAPE]:
@@ -302,20 +243,8 @@ while True:
   # Render background
   #background.fill((0, 0, 0))
   background.blit(scene, (0, 0))
-  
-  # Draw guy0 moving left or right (ghetto method)
-  if not guy0_move_left:
-    background.blit(guy0, guy0_pos)
-  else:
-    background.blit(guy0_left, guy0_pos)
-
-  # Draw guy1 moving left or right (ghetto method)
-  if not guy1_move_left:
-    background.blit(guy1, guy1_pos)
-  else:
-    background.blit(guy1_left, guy1_pos)
-  
-
+  background.blit(guy0, guy0_pos)
+  background.blit(guy1, guy1_pos)
 
   # Render to screen   
   screen.blit(background, (0,0))

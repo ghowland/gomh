@@ -3,18 +3,17 @@
 import pygame
 import sys
 
-SCALE = 0.5
-sprite_size = [int(85*SCALE), int(112*SCALE)]
+sprite_size = [85/2, 112/2]
 
 pygame.init()
 SCREEN_SIZE = (640, 480)
 screen = pygame.display.set_mode(SCREEN_SIZE)
-pygame.display.set_caption('Street Figher 9')
+pygame.display.set_caption('Get Off My Head')
 #pygame.mouse.set_visible(0)
 
 
 image = pygame.image.load('sf_sprites.png')
-image = pygame.transform.scale(image, (int(image.get_width()*SCALE), int(image.get_height()*SCALE)))
+image = pygame.transform.scale(image, (image.get_width()/2, image.get_height()/2))
 image = image.convert_alpha()
 sf_sprites = image
 
@@ -25,100 +24,22 @@ scene_mask = pygame.image.load('sf_back_mask.png')
 guy0 = pygame.Surface(sprite_size)
 guy0.convert_alpha() 
 guy0.blit(sf_sprites, (0,0), [0, 0, sprite_size[0], sprite_size[1]])
-guy0left = pygame.transform.flip(guy0, True, False)
+guy0_left = pygame.transform.flip(guy0, True, False)
 
 guy1 = pygame.Surface(sprite_size)
 guy1.convert_alpha() 
 guy1.blit(sf_sprites, (0,0), [sprite_size[0] * 1, sprite_size[1] * 0, sprite_size[0], sprite_size[1]])
-guy1left = pygame.transform.flip(guy1, True, False)
+guy1_left = pygame.transform.flip(guy1, True, False)
 
 background = pygame.Surface(screen.get_size())
 background = background.convert()
 background.fill((0, 0, 0))
 
-
-class Actor:
-  def __init__(self, id, name, start_pos, image_size, image_right, image_left):
-    # Specified information
-    self.id = id
-    self.name = name
-    self.pos = start_pos
-    self.image_size = image_size
-    self.image_right = image_right
-    self.image_left = image_left
-    
-    # Internal information
-    self.jump = 0
-    self.fall = 1
-    self.move_left = False
-
-  
-  def __repr__(self):
-    output = '%s: %s: %s' % (self.id, self.name, self.pos)
-    return output
-  
-  
-  def GetSurface(self):
-    """Return the current surface for this game.
-    TODO(g): Animations have not yet been introduced.
-    """
-    if self.move_left:
-      return self.image_left
-    else:
-      return self.image_right
-
-
-  def Update(self):
-    """Process all physics and junk"""
-    #TODO(g): Replace actor. with self., this is a short-cut
-    actor = self
-    
-    # Fall, if you can
-    if actor.jump == 0:
-      [fall_pos, collision_actor] = MovePosCollide(actor, [0, actor.fall], ACTORS, scene_mask)
-      if fall_pos != actor.pos:
-        actor.pos = fall_pos
-        if actor.fall < 10:
-          actor.fall += 1
-      else:
-        actor.fall = 1
-
-    if actor.jump > 0:
-      hit_the_roof = False
-
-      for count in range(0, actor.jump):
-        [jump_pos, collision_actor] = MovePosCollide(actor, [0, -1], ACTORS, scene_mask)
-
-        # If we hit a ceiling, dont immediately cancell the jump, but reduce it quickly (gives a sense of upward inertia)
-        if jump_pos == actor.pos:
-          hit_the_roof = True
-          break
-        # Update the new position, cause we didnt hit the roof
-        else:
-          actor.pos = jump_pos
-
-      # Reduce the jump each frame
-      if not hit_the_roof:
-        actor.jump -= 1
-      else:
-        actor.jump = actor.jump / 2
-        if actor.jump <= 2:
-          actor.jump = 0
-
-
-
-
-# Create our actors
-ACTORS = []
-actor_0 = Actor(0, 'Ryu', [300, 130], sprite_size, guy0, guy0left)
-ACTORS.append(actor_0)
-actor_1 = Actor(1, 'Ken', [220, 130], sprite_size, guy1, guy1left)
-ACTORS.append(actor_1)
-
+guy0_pos = [300, 130]
+guy1_pos = [220, 130]
 
 # Scrolling here.  X and Y (Y to be implemented later...)
 SCROLL_OFFSET = [0, 0]
-
 
 def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_color=(255,255,255), log=False):
   """Test for a collision against the scene, starting at start_pos, ending at end_pos, using step to increment.
@@ -201,48 +122,11 @@ def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_col
   return has_collision  
 
 
-def MovePosCollide(actor, move, all_actors, scene_image, scene_obstacle_color=(255,255,255), log=False):
-  """Collision with actors and scene"""
-  # Collision with scene
-  scene_pos = MovePosCollideWithScene(actor.pos, move, actor.image_size, scene_image, scene_obstacle_color=(255,255,255), log=log)
-  if scene_pos == actor.pos:
-    scene_collision = True
-  else:
-    scene_collision = False
-  
-  # Test against actors
-  actor_collision = False
-  collision_with_actor = None
-  target_pos = [actor.pos[0] + move[0], actor.pos[1] + move[1]]
-  target_rect = pygame.Rect(target_pos, actor.image_size)
-  for test_actor in all_actors:
-    # Dont count yourself
-    if actor.id != test_actor.id:
-      test_actor_rect = pygame.Rect(test_actor.pos, test_actor.image_size)
-      has_collision = test_actor_rect.colliderect(target_rect)
-    
-      if has_collision:
-        #print 'Collision: %s with %s' % (target_pos, test_actor)
-        actor_collision = True
-        collision_with_actor = test_actor
-        break
-    else:
-      #print 'Collision: Skip self: %s' % test_actor
-      pass
-  
-  # If we didnt have collisions with scene or actors, return moved position
-  if not scene_collision and not actor_collision:
-    return (target_pos, collision_with_actor)
-  # Else, had collision so return current position
-  else:
-    return (list(actor.pos), collision_with_actor)
-    
-
 def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obstacle_color=(255,255,255), log=False):
   """Returns a new position [x, y] from pos, moved by move [dx, dy], with 
   respect to colliding against non-moveable area in scene_image 
   (non [0,0,0] colors)
-  
+
   Args:
     pos: list, [x, y]
     move: list, [dx, dy]
@@ -291,13 +175,36 @@ def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obs
     elif TestCollisionByPixelStep(corner_bottom_left, corner_bottom_right, step_test, scene_image, log=log):
       has_collision = True
 
+    # # Get pixel values for each of the corners
+    # scene_top_left = scene_image.get_at(corner_top_left)[:3]
+    # scene_top_right = scene_image.get_at(corner_top_right)[:3]
+    # scene_bottom_left = scene_image.get_at(corner_bottom_left)[:3]
+    # scene_bottom_right = scene_image.get_at(corner_bottom_right)[:3]
+    # 
+    # # Test for colission
+    # if scene_top_left == scene_obstacle_color:
+    #   has_collision = True
+    # elif scene_top_right == scene_obstacle_color:
+    #   has_collision = True
+    # elif scene_bottom_left == scene_obstacle_color:
+    #   has_collision = True
+    # elif scene_bottom_right == scene_obstacle_color:
+    #   has_collision = True
 
   # If there was a collision, dont move, create a new list form the old list 
   if has_collision:
+    # #DEBUG: Print shit out to see
+    # print 'TL: %s - %s' % (corner_top_left, scene_top_left)
+    # print 'TR: %s - %s' % (corner_top_right, scene_top_right)
+    # print 'BL: %s - %s' % (corner_bottom_left, scene_bottom_left)
+    # print 'BR: %s - %s' % (corner_bottom_right, scene_bottom_right)
+
     final_pos = [pos[0], pos[1]]
   
   # Else, there was not a collision, move the position
   else:
+    # print 'No collision, moving: %s' % move
+    
     final_pos = target_pos
 
   return final_pos
@@ -315,74 +222,118 @@ def Draw(surface, target_surface, pos):
   target_surface.blit(surface, GetPosScrolled(pos))
 
 
-# Specify the player, so that we dont use NPC AI for it
-PLAYER_ACTOR_ID = 1
-
-# Find player actor
-PLAYER_ACTOR = None
-for actor in ACTORS:
-  if actor.id == PLAYER_ACTOR_ID:
-    PLAYER_ACTOR = actor
-    break
-if PLAYER_ACTOR == None:
-  raise Exception('WTF?  Couldnt find the player actor, you didnt specify the ID correctly or didnt add the player actor in ACTORS')
-
+# Left/Right?  GHETTO CODE!
+guy0_move_left = False
+guy1_move_left = False
+guy0_jump = 0
+guy1_jump = 0
+guy0_fall = 1
+guy1_fall = 1
 
 while True:
-  #print 'Actors: %s' % ACTORS
+  if guy0_pos[0] < guy1_pos[0]:
+    guy0_move_left = False
+    move_pos = MovePosCollideWithScene(guy0_pos, [5, 0], sprite_size, scene_mask)
+    if move_pos == guy0_pos and guy0_jump == 0:
+      guy0_jump = 17
+    else:
+      guy0_pos = move_pos
+  elif guy0_pos[0] > guy1_pos[0]:
+    guy0_move_left = True
+    move_pos = MovePosCollideWithScene(guy0_pos, [-5, 0], sprite_size, scene_mask)
+    if move_pos == guy0_pos and guy0_jump == 0:
+      guy0_jump = 17
+    else:
+      guy0_pos = move_pos
+
+  # Fall, if you can
+  if guy0_jump == 0:
+    fall_pos = MovePosCollideWithScene(guy0_pos, [0, guy0_fall], sprite_size, scene_mask)
+    if fall_pos != guy0_pos:
+      guy0_pos = fall_pos
+      if guy0_fall < 10:
+        guy0_fall += 1
+    else:
+      guy0_fall = 1
   
-  # Enemy AI
-  for actor in ACTORS:
-    # Skip the player, process everyone else
-    if actor.id == PLAYER_ACTOR_ID:
-      continue
-    
-    # Player is to the Right
-    if actor.pos[0] < PLAYER_ACTOR.pos[0]:
-      actor.move_left = False
-      [move_pos, collision_actor] = MovePosCollide(actor, [5, 0], ACTORS, scene_mask)
-      if move_pos == actor.pos and actor.jump == 0:
-        actor.jump = 17
-      else:
-        actor.pos = move_pos
-    
-    # Player is to the Left
-    elif actor.pos[0] > PLAYER_ACTOR.pos[0]:
-      actor.move_left = True
-      [move_pos, collision_actor] = MovePosCollide(actor, [-5, 0], ACTORS, scene_mask)
-      if move_pos == actor.pos and actor.jump == 0:
-        actor.jump = 17
-      else:
-        actor.pos = move_pos
-
-
 
   # Event pump
   for event in pygame.event.get(): 
     if event.type == pygame.QUIT: 
           sys.exit(0) 
 
-
   # Player input handling
   keys = pygame.key.get_pressed()  #checking pressed keys
-  # Left
   if keys[pygame.K_LEFT]:
-    PLAYER_ACTOR.move_left = True
-    [PLAYER_ACTOR.pos, collision_actor] = MovePosCollide(PLAYER_ACTOR, [-5, 0], ACTORS, scene_mask)
-  # Right
+    guy1_move_left = True
+    guy1_pos = MovePosCollideWithScene(guy1_pos, [-5, 0], sprite_size, scene_mask)
   if keys[pygame.K_RIGHT]:
-    PLAYER_ACTOR.move_left = False
-    [PLAYER_ACTOR.pos, collision_actor] = MovePosCollide(PLAYER_ACTOR, [5, 0], ACTORS, scene_mask)
-  # Up
+    guy1_move_left = False
+    guy1_pos = MovePosCollideWithScene(guy1_pos, [5, 0], sprite_size, scene_mask)
   if keys[pygame.K_UP]:
-    [ground_test_pos, collision_actor] = MovePosCollide(PLAYER_ACTOR, [0, 1], ACTORS, scene_mask)
-    if ground_test_pos == PLAYER_ACTOR.pos and PLAYER_ACTOR.jump == 0:
-      PLAYER_ACTOR.jump = 17
+    ground_test_pos = MovePosCollideWithScene(guy1_pos, [0, 1], sprite_size, scene_mask)
+    if ground_test_pos == guy1_pos and guy1_jump == 0:
+      guy1_jump = 17
+
+  # if keys[pygame.K_DOWN]:
+  #   guy1_pos = MovePosCollideWithScene(guy1_pos, [0, 2], sprite_size, scene_mask)
+  
+  # Fall, if you can
+  if guy1_jump == 0:
+    fall_pos = MovePosCollideWithScene(guy1_pos, [0, guy1_fall], sprite_size, scene_mask)
+    if fall_pos != guy1_pos:
+      guy1_pos = fall_pos
+      if guy1_fall < 10:
+        guy1_fall += 1
+    else:
+      guy1_fall = 1
+
+  # Test for jumping (guy1)
+  if guy1_jump > 0:
+    hit_the_roof = False
+    
+    for count in range(0, guy1_jump):
+      jump_pos = MovePosCollideWithScene(guy1_pos, [0, -1], sprite_size, scene_mask)
+    
+      # If we hit a ceiling, dont immediately cancell the jump, but reduce it quickly (gives a sense of upward inertia)
+      if jump_pos == guy1_pos:
+        hit_the_roof = True
+        break
+      # Update the new position, cause we didnt hit the roof
+      else:
+        guy1_pos = jump_pos
+    
+    # Reduce the jump each frame
+    if not hit_the_roof:
+      guy1_jump -= 1
+    else:
+      guy1_jump = guy1_jump / 2
+      if guy1_jump <= 2:
+        guy1_jump = 0
 
 
-  # Update all our actors
-  for actor in ACTORS:
-    actor.Update()
+  # Test for jumping (guy0)
+  if guy0_jump > 0:
+    hit_the_roof = False
+
+    for count in range(0, guy0_jump):
+      jump_pos = MovePosCollideWithScene(guy0_pos, [0, -1], sprite_size, scene_mask)
+
+      # If we hit a ceiling, dont immediately cancell the jump, but reduce it quickly (gives a sense of upward inertia)
+      if jump_pos == guy0_pos:
+        hit_the_roof = True
+        break
+      # Update the new position, cause we didnt hit the roof
+      else:
+        guy0_pos = jump_pos
+
+    # Reduce the jump each frame
+    if not hit_the_roof:
+      guy0_jump -= 1
+    else:
+      guy0_jump = guy0_jump / 2
+      if guy0_jump <= 2:
+        guy0_jump = 0
 
   
   # If ESC is hit, quit
@@ -391,17 +342,16 @@ while True:
 
 
   # Handle scrolling the world
+  # global SCROLL_OFFSET
+  # global SCREEN_SIZE
   scrolled_screen_x = [SCROLL_OFFSET[0], SCROLL_OFFSET[0] + SCREEN_SIZE[0]]
   boundary_x = int(SCREEN_SIZE[0] / 2.5)
   scroll_by_pixels = 3
-  # Left screen boundary
-  if PLAYER_ACTOR.pos[0] < scrolled_screen_x[0] + boundary_x:
+  if guy1_pos[0] < scrolled_screen_x[0] + boundary_x:
     SCROLL_OFFSET[0] -= scroll_by_pixels
     if SCROLL_OFFSET[0] < 0:
       SCROLL_OFFSET[0] = 0
-  
-  # Right screen boundary
-  elif PLAYER_ACTOR.pos[0] > scrolled_screen_x[1] - boundary_x:
+  elif guy1_pos[0] > scrolled_screen_x[1] - boundary_x:
     SCROLL_OFFSET[0] += scroll_by_pixels
     max_scroll_x = scene.get_width() - SCREEN_SIZE[0]
     if SCROLL_OFFSET[0] >= max_scroll_x:
@@ -409,13 +359,27 @@ while True:
 
 
   # Render background
+  #background.fill((0, 0, 0))
+  #background.blit(scene, (0, 0))
   Draw(scene, background, (0,0))
   
+  # Draw guy0 moving left or right (ghetto method)
+  if not guy0_move_left:
+    #background.blit(guy0, guy0_pos)
+    Draw(guy0, background, guy0_pos)
+  else:
+    #background.blit(guy0_left, guy0_pos)
+    Draw(guy0_left, background, guy0_pos)
+
+  # Draw guy1 moving left or right (ghetto method)
+  if not guy1_move_left:
+    #background.blit(guy1, guy1_pos)
+    Draw(guy1, background, guy1_pos)
+  else:
+    #background.blit(guy1_left, guy1_pos)
+    Draw(guy1_left, background, guy1_pos)
   
-  # Draw all the actors
-  for actor in ACTORS:
-    Draw(actor.GetSurface(), background, actor.pos)
-  
+
 
   # Render to screen   
   screen.blit(background, (0,0))

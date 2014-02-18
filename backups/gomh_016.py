@@ -55,12 +55,8 @@ for row in range(0, 4):
     animations[key] = [face_right, face_left]
 
 
-# Starting Health
-STARTING_HEALTH = 12
-HEALTH_GAINED_BY_KILL = 4
-
 class Actor:
-  def __init__(self, id, name, start_pos, speed, image_size, image_right, image_left, starting_health=STARTING_HEALTH):
+  def __init__(self, id, name, start_pos, speed, image_size, image_right, image_left):
     print 'Creating Actor: %s: %s: %s' % (id, name, start_pos)
     
     # Specified information
@@ -76,9 +72,7 @@ class Actor:
     self.jump = 0
     self.fall = 1
     self.move_left = False
-    self.starting_health = starting_health
-    self.health = starting_health
-    self.kills = 0
+    self.health = 10
 
   
   def __repr__(self):
@@ -163,12 +157,6 @@ class Actor:
         if actor.jump <= 2:
           actor.jump = 0
     
-    # Test you are standing on an actors head
-    [player_below_test_pos, collision_actor] = MovePosCollide(actor, [0, 1], ACTORS, scene_mask)
-    if player_below_test_pos == actor.pos and collision_actor != None:
-      #print 'Standing on player: %s --- %s' % (self, collision_actor)
-      killed_target = collision_actor.Hit(actor=self)
-    
     
     # Take Scene Damage (fire anyone?)
     #TODO(g): Only testing right/left means that sitting in it or standing on it doesnt count, for every case
@@ -196,53 +184,47 @@ class Actor:
     # Starting AI state
     toward_target = True
     move_right = True
-    target_above_self = False
-    target_below_self = False
+    target_far = True
     
+    # If above, by more than half your size, Move Away
+    if self.pos[1] < target_actor.pos[1]:
+      #print 'Above Target 1: %s - %s' % (self, target_actor)
+      toward_target = False
+    
+    # If above, by more than half your size, Move Away
+    if self.pos[1] > target_actor.pos[1] + target_actor.image_size[1]:
+      #print 'Below Target 1: %s - %s' % (self, target_actor)
+      toward_target = False
+
     # Determine if the target is Far Away
     dist = self.GetDistanceToActor(target_actor)
-    if dist > self.image_size[0] * 3:
+    if dist > self.image_size[0] * 2:
       target_far = True
     else:
       target_far = False
     
-    # If above, by more than half your size, Move Away
-    if self.pos[1] > target_actor.pos[1]:
-      #print 'Actor Above Self: %s ----- %s' % (self, target_actor)
-      target_above_self = True
-
-    # If above, by more than half your size, Move Away
-    if self.pos[1] < target_actor.pos[1] + target_actor.image_size[1]:
-      #print 'Actor Below Self: %s ----- %s' % (self, target_actor)
-      target_below_self = True
-
-
-    # If the target is below, move the opposite direction -- Move Away
-    if target_above_self and not target_far:
-      if self.pos[0] > target_actor.pos[0]:
-        target_move = [self.speed, 0]
-      else:
-        target_move = [-self.speed, 0]
-    
-    # Else, target is close vertically -- Move Toward
+    # Test direction, flip if moving away from the target
+    if self.pos[0] < target_actor.pos[0] and toward_target:
+      move_right = True
     else:
-      if self.pos[0] < target_actor.pos[0]:
-        target_move = [self.speed, 0]
-      else:
-        target_move = [-self.speed, 0]
+      move_right = False
     
+    # Player is to the Right
+    if move_right:
+      target_move = [self.speed, 0]
     
-    # Move specified amount
-    blocked_by_scene = self.Walk(target_move)
+    # Player is to the Left
+    else:
+      target_move = [-self.speed, 0]
     
+    self.Walk(target_move)
     
-    # If we want to jump
-    if target_above_self or blocked_by_scene:
+    # If the target is far from this NPC
+    if target_far:
       actor.Jump()
 
 
   def Walk(self, move):
-    """Returns boolean, True if collision with scene"""
     global ACTORS
     global scene_mask
     
@@ -251,9 +233,7 @@ class Actor:
       self.move_left = True
     else:
       self.move_left = False
-    
-    scene_collision = False
-    
+      
     [target_pos, collision_actor] = MovePosCollide(self, move, ACTORS, scene_mask)
     # If no collision, move
     if target_pos != self.pos:
@@ -263,37 +243,19 @@ class Actor:
     elif collision_actor != None:
       push = [move[0] * 2, move[1] * 2]
       collision_actor.Walk(push)
-    
-    # Else, hit a wall
-    else:
-      scene_collision = True
-    
-    # Return boolean on whether could walk, blocked by scene
-    return scene_collision
+      collision_actor.Hit()
 
 
-
-  def Hit(self, points=1, actor=None):
-    """Returns boolean, True if actor was killed"""
+  def Hit(self, points=2):
     self.health -= points
-    
     if self.health < 0:
       self.Respawn()
-      
-      # If an actor did this, give them the health bonus
-      if actor != None:
-        actor.health += HEALTH_GAINED_BY_KILL
-      
-      return True
-    
-    else:
-      return False
   
   
   def Respawn(self):
     global scene
     
-    self.health = self.starting_health
+    self.health = 10
     
     # Respawn anywhere in the map, at the fixed height
     found_good_respawn_point = False
@@ -334,8 +296,8 @@ PLAYER_ACTOR_ID = 0
 PLAYER_ACTOR = None
 PLAYER_SPEED = 5
 NPC_SPEED = 3
-TOTAL_ACTORS = 6
-#TOTAL_ACTORS = 2
+#TOTAL_ACTORS = 6
+TOTAL_ACTORS = 3
 
 # Automatically load all the character
 for row in range(0, 4):
@@ -636,9 +598,6 @@ while True:
   for actor in ACTORS:
     Draw(actor.GetSurface(), background, actor.pos)
   
-  # Draw UI
-  # Draw Player Health Bar
-  #pygame.draw.rect(background, (240,240,240), pygame.rect.Rect((40, 40), (PLAYER_ACTOR.health * 5, 20)))
 
   # Render to screen   
   screen.blit(background, (0,0))
