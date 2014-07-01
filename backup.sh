@@ -5,7 +5,7 @@ VERSION=$1
 if [ "$VERSION" == "" ] ; then
   echo "usage: $0 <version number>"
 
-  LAST=`ls -1rt _backups/gomh_*.zip`
+  LAST=`ls -1rtd _backups/gomh_* | tail -1`
   echo "  Latest Backup: $LAST"
 
   exit 1
@@ -13,14 +13,15 @@ fi
 
 VERSION_STRING=`printf "%03d" $VERSION`
 
-FILE=_backups/gomh_${VERSION_STRING}.zip
+DIR=_backups/gomh_${VERSION_STRING}
 
-if [ -e $FILE ] ; then
-  echo "error: backup file already exists: $FILE"
+if [ -d $DIR ] ; then
+  echo "error: backup dir already exists: $DIR"
   exit 1
 fi
 
+mkdir $DIR
+cp *.py $DIR
 
-
-echo "Created: $FILE"
+echo "Created: $DIR"
 

@@ -12,33 +12,33 @@ Todo:
 
 
 import sys
-
-import constants
+import math
+import random
 
 from graphics import *
 from actor import *
+from constants import *
 
 
 def Main():
   """The game.  Control function."""
   # Initialize the screen
   pygame.init()
-  constants.screen = pygame.display.set_mode(constants.SCREEN_SIZE)
+  screen = pygame.display.set_mode(SCREEN_SIZE)
   pygame.display.set_caption('Get Off My Head')
   #pygame.mouse.set_visible(0)
 
   # Create the background
-  constants.background = pygame.Surface(constants.screen.get_size())
-  constants.background = constants.background.convert()
-  constants.background.fill((0, 0, 0))
+  background = pygame.Surface(screen.get_size())
+  background = background.convert()
+  background.fill((0, 0, 0))
 
   # Load the SF character sprites
-  constants.sf_sprites = LoadImage('sf_sprites.png')
+  sf_sprites = LoadImage('sf_sprites.png')
 
   # Load scene and it's collision mask
-  constants.scene = pygame.image.load('sf_back.png')
-  constants.scene_mask = pygame.image.load('sf_back_mask.png')
-
+  scene = pygame.image.load('sf_back.png')
+  scene_mask = pygame.image.load('sf_back_mask.png')
 
   # Create Actor Animations Sets (ghetto style, only left/right)
   animations = {}
@@ -48,9 +48,9 @@ def Main():
     for col in range(0, 4):
       key = (col, row)
       
-      face_right = pygame.Surface(constants.sprite_size)
+      face_right = pygame.Surface(sprite_size)
       face_right.convert_alpha() 
-      face_right.blit(constants.sf_sprites, (0,0), [constants.sprite_size[0] * col, constants.sprite_size[1] * row, constants.sprite_size[0], constants.sprite_size[1]])
+      face_right.blit(sf_sprites, (0,0), [sprite_size[0] * col, sprite_size[1] * row, sprite_size[0], sprite_size[1]])
       face_left = pygame.transform.flip(face_right, True, False)
       
       animations[key] = [face_right, face_left]
@@ -64,23 +64,27 @@ def Main():
       id = 4*row + col
       
       # Determine speed (player or NPC)
-      if id == constants.PLAYER_ACTOR_ID:
-        speed = constants.PLAYER_SPEED
+      if id == PLAYER_ACTOR_ID:
+        speed = PLAYER_SPEED
       else:
-        speed = constants.NPC_SPEED
+        speed = NPC_SPEED
       
       # Only create this character if its not off the screen.  Thats a lot of characters anyway
       start_x = id * 150 + 220
-      if len(constants.ACTORS) < constants.TOTAL_ACTORS:
-        actor = Actor(id, 'Name: %s' % id, [start_x, 130], speed, constants.sprite_size, animations[key][0], animations[key][1])
-        constants.ACTORS.append(actor)
+      if len(ACTORS) < TOTAL_ACTORS:
+        actor = Actor(id, 'Name: %s' % id, [start_x, 130], speed, sprite_size, animations[key][0], animations[key][1])
+        ACTORS.append(actor)
         
         # Set the player actor, by ID
-        if id == constants.PLAYER_ACTOR_ID:
-          constants.PLAYER_ACTOR = actor
+        if id == PLAYER_ACTOR_ID:
+          PLAYER_ACTOR = actor
 
-  if constants.PLAYER_ACTOR == None:
+  if PLAYER_ACTOR == None:
     raise Exception('WTF?  Couldnt find the player actor, you didnt specify the ID correctly or didnt add the player actor in ACTORS')
+
+
+  # Put the previously global variables back into the global name space
+  global screen, background, sf_sprites, scene, scene_mask, speed
 
 
   cur_time = pygame.time.get_ticks()
@@ -104,21 +108,21 @@ def Main():
     keys = pygame.key.get_pressed()  #checking pressed keys
     # Left
     if keys[pygame.K_LEFT]:
-      constants.PLAYER_ACTOR.Walk([-5, 0])
+      PLAYER_ACTOR.Walk([-5, 0])
       # PLAYER_ACTOR.move_left = True
       # [PLAYER_ACTOR.pos, collision_actor] = MovePosCollide(PLAYER_ACTOR, [-5, 0], ACTORS, scene_mask)
     # Right
     if keys[pygame.K_RIGHT]:
-      constants.PLAYER_ACTOR.Walk([5, 0])
+      PLAYER_ACTOR.Walk([5, 0])
       # PLAYER_ACTOR.move_left = False
       # [PLAYER_ACTOR.pos, collision_actor] = MovePosCollide(PLAYER_ACTOR, [5, 0], ACTORS, scene_mask)
     # Up
     if keys[pygame.K_UP]:
-      constants.PLAYER_ACTOR.Jump()
+      PLAYER_ACTOR.Jump()
 
 
     # Update all our actors
-    for actor in constants.ACTORS:
+    for actor in ACTORS:
       actor.Update()
 
     
@@ -128,47 +132,47 @@ def Main():
 
 
     # Handle scrolling the world
-    scrolled_screen_x = [constants.SCROLL_OFFSET[0], constants.SCROLL_OFFSET[0] + constants.SCREEN_SIZE[0]]
-    boundary_x = int(constants.SCREEN_SIZE[0] / 2.5)
+    scrolled_screen_x = [SCROLL_OFFSET[0], SCROLL_OFFSET[0] + SCREEN_SIZE[0]]
+    boundary_x = int(SCREEN_SIZE[0] / 2.5)
     scroll_by_pixels = 3
     # Left screen boundary
-    if constants.PLAYER_ACTOR.pos[0] < scrolled_screen_x[0] + boundary_x:
+    if PLAYER_ACTOR.pos[0] < scrolled_screen_x[0] + boundary_x:
       # Scroll faster if player is off the screen
-      if constants.PLAYER_ACTOR.pos[0] < constants.SCROLL_OFFSET[0]:
-        constants.SCROLL_OFFSET[0] -= scroll_by_pixels * 3
+      if PLAYER_ACTOR.pos[0] < SCROLL_OFFSET[0]:
+        SCROLL_OFFSET[0] -= scroll_by_pixels * 3
       else:
-        constants.SCROLL_OFFSET[0] -= scroll_by_pixels
+        SCROLL_OFFSET[0] -= scroll_by_pixels
         
-      if constants.SCROLL_OFFSET[0] < 0:
-        constants.SCROLL_OFFSET[0] = 0
+      if SCROLL_OFFSET[0] < 0:
+        SCROLL_OFFSET[0] = 0
     
     # Right screen boundary
-    elif constants.PLAYER_ACTOR.pos[0] > scrolled_screen_x[1] - boundary_x:
+    elif PLAYER_ACTOR.pos[0] > scrolled_screen_x[1] - boundary_x:
       # Scroll faster if player is off the screen
-      if constants.PLAYER_ACTOR.pos[0] > constants.SCROLL_OFFSET[0]:
-        constants.SCROLL_OFFSET[0] += scroll_by_pixels * 3
+      if PLAYER_ACTOR.pos[0] > SCROLL_OFFSET[0]:
+        SCROLL_OFFSET[0] += scroll_by_pixels * 3
       else:
-        constants.SCROLL_OFFSET[0] += scroll_by_pixels
+        SCROLL_OFFSET[0] += scroll_by_pixels
       
-      max_scroll_x = constants.scene.get_width() - constants.SCREEN_SIZE[0]
-      if constants.SCROLL_OFFSET[0] >= max_scroll_x:
-        constants.SCROLL_OFFSET[0] = max_scroll_x
+      max_scroll_x = scene.get_width() - SCREEN_SIZE[0]
+      if SCROLL_OFFSET[0] >= max_scroll_x:
+        SCROLL_OFFSET[0] = max_scroll_x
 
 
     # Render background
-    Draw(constants.scene, constants.background, (0,0))
+    Draw(scene, background, (0,0))
     
     
     # Draw all the actors
-    for actor in constants.ACTORS:
-      Draw(actor.GetSurface(), constants.background, actor.pos)
+    for actor in ACTORS:
+      Draw(actor.GetSurface(), background, actor.pos)
     
     # Draw UI
     # Draw Player Health Bar
-    pygame.draw.rect(constants.background, (240,240,240), pygame.rect.Rect((40, 40), (constants.PLAYER_ACTOR.health * 5, 20)))
+    pygame.draw.rect(background, (240,240,240), pygame.rect.Rect((40, 40), (PLAYER_ACTOR.health * 5, 20)))
 
     # Render to screen   
-    constants.screen.blit(constants.background, (0,0))
+    screen.blit(background, (0,0))
     pygame.display.flip()
 
 

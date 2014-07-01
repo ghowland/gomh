@@ -25,14 +25,3 @@ NPC_SPEED = 3
 TOTAL_ACTORS = 6
 #TOTAL_ACTORS = 2
 
-# Screen and background
-screen = None
-background = None
-
-# Load the SF character sprites
-sf_sprites = None
-
-# Load scene and it's collision mask
-scene = None
-scene_mask = None
-

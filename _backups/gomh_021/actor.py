@@ -2,15 +2,13 @@
 Actor
 """
 
-import math
-import random
 
-import constants
+from constants import *
 from movement import *
 
 
 class Actor:
-  def __init__(self, id, name, start_pos, speed, image_size, image_right, image_left, starting_health=constants.STARTING_HEALTH):
+  def __init__(self, id, name, start_pos, speed, image_size, image_right, image_left, starting_health=STARTING_HEALTH):
     print 'Creating Actor: %s: %s: %s' % (id, name, start_pos)
     
     # Specified information
@@ -47,10 +45,12 @@ class Actor:
 
 
   def FindClosestActor(self):
+    global ACTORS
+    
     closest_actor = None
     closest_dist = None
     
-    for actor in constants.ACTORS:
+    for actor in ACTORS:
       # Skip yourself
       if actor.id == self.id:
         continue
@@ -71,7 +71,10 @@ class Actor:
 
   def Update(self):
     """Process all physics and junk"""
-    if self.id != constants.PLAYER_ACTOR_ID:
+    global scene_mask
+    global PLAYER_ACTOR_ID
+    
+    if self.id != PLAYER_ACTOR_ID:
       self.UpdateNPC()
     
     #TODO(g): Replace actor. with self., this is a short-cut
@@ -79,7 +82,7 @@ class Actor:
     
     # Fall, if you can
     if actor.jump == 0:
-      [fall_pos, collision_actor] = MovePosCollide(actor, [0, actor.fall], constants.ACTORS, constants.scene_mask)
+      [fall_pos, collision_actor] = MovePosCollide(actor, [0, actor.fall], ACTORS, scene_mask)
       if fall_pos != actor.pos:
         actor.pos = fall_pos
         if actor.fall < 10:
@@ -92,7 +95,7 @@ class Actor:
       hit_the_roof = False
 
       for count in range(0, actor.jump):
-        [jump_pos, collision_actor] = MovePosCollide(actor, [0, -1], constants.ACTORS, constants.scene_mask)
+        [jump_pos, collision_actor] = MovePosCollide(actor, [0, -1], ACTORS, scene_mask)
 
         # If we hit a ceiling, dont immediately cancell the jump, but reduce it quickly (gives a sense of upward inertia)
         if jump_pos == actor.pos:
@@ -111,7 +114,7 @@ class Actor:
           actor.jump = 0
     
     # Test you are standing on an actors head
-    [player_below_test_pos, collision_actor] = MovePosCollide(actor, [0, 1], constants.ACTORS, constants.scene_mask)
+    [player_below_test_pos, collision_actor] = MovePosCollide(actor, [0, 1], ACTORS, scene_mask)
     if player_below_test_pos == actor.pos and collision_actor != None:
       #print 'Standing on player: %s --- %s' % (self, collision_actor)
       killed_target = collision_actor.Hit(actor=self)
@@ -120,11 +123,11 @@ class Actor:
     # Take Scene Damage (fire anyone?)
     #TODO(g): Only testing right/left means that sitting in it or standing on it doesnt count, for every case
     # Test Right
-    [damage_test_pos, collision_actor] = MovePosCollide(actor, [1, 0], constants.ACTORS, constants.scene_mask, scene_obstacle_color=(255,66,246))
+    [damage_test_pos, collision_actor] = MovePosCollide(actor, [1, 0], ACTORS, scene_mask, scene_obstacle_color=(255,66,246))
     if damage_test_pos == actor.pos:
       self.Hit(1)
     # Test Left
-    [damage_test_pos, collision_actor] = MovePosCollide(actor, [-1, 0], constants.ACTORS, constants.scene_mask, scene_obstacle_color=(255,66,246))
+    [damage_test_pos, collision_actor] = MovePosCollide(actor, [-1, 0], ACTORS, scene_mask, scene_obstacle_color=(255,66,246))
     if damage_test_pos == actor.pos:
       self.Hit(1)
     
@@ -190,6 +193,9 @@ class Actor:
 
   def Walk(self, move):
     """Returns boolean, True if collision with scene"""
+    global ACTORS
+    global scene_mask
+    
     # Determine facing position
     if move[0] < 0:
       self.move_left = True
@@ -198,7 +204,7 @@ class Actor:
     
     scene_collision = False
     
-    [target_pos, collision_actor] = MovePosCollide(self, move, constants.ACTORS, constants.scene_mask)
+    [target_pos, collision_actor] = MovePosCollide(self, move, ACTORS, scene_mask)
     # If no collision, move
     if target_pos != self.pos:
       self.pos = target_pos
@@ -226,7 +232,7 @@ class Actor:
       
       # If an actor did this, give them the health bonus
       if actor != None:
-        actor.health += constants.HEALTH_GAINED_BY_KILL
+        actor.health += HEALTH_GAINED_BY_KILL
       
       return True
     
@@ -235,26 +241,31 @@ class Actor:
   
   
   def Respawn(self):
+    global scene
+    
     self.health = self.starting_health
     
     # Respawn anywhere in the map, at the fixed height
     found_good_respawn_point = False
     while not found_good_respawn_point:
-      respawn_x = random.randint(0, constants.scene.get_width() - self.image_size[0])    
+      respawn_x = random.randint(0, scene.get_width() - self.image_size[0])    
       self.pos = [respawn_x, 130]
       
       #TODO(g): Could be colliding with scene, in a different scene than the test one
-      [target_pos, collision_actor] = MovePosCollide(self, [0,0], constants.ACTORS, constants.scene_mask)
+      [target_pos, collision_actor] = MovePosCollide(self, [0,0], ACTORS, scene_mask)
       if collision_actor == None:
         found_good_respawn_point = True
 
 
   def Jump(self):
-    [ground_test_pos, collision_actor] = MovePosCollide(self, [0, 1], constants.ACTORS, constants.scene_mask)
+    global ACTORS
+    global scene_mask
+    
+    [ground_test_pos, collision_actor] = MovePosCollide(self, [0, 1], ACTORS, scene_mask)
     # If we are free to jump
     if ground_test_pos == self.pos and self.jump == 0:
       # Test if there is an actor (or obstacle) directly above us
-      [actor_on_head_test_pos, collision_actor] = MovePosCollide(self, [0, -1], constants.ACTORS, constants.scene_mask)
+      [actor_on_head_test_pos, collision_actor] = MovePosCollide(self, [0, -1], ACTORS, scene_mask)
       if actor_on_head_test_pos != self.pos:
         self.jump = 17
       

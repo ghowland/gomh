@@ -2,10 +2,7 @@
 Movement
 """
 
-import pygame
-
-import constants
-
+from constants import *
 
 def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_color=(255,255,255), log=False):
   """Test for a collision against the scene, starting at start_pos, ending at end_pos, using step to increment.
@@ -47,7 +44,7 @@ def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_col
   
   while not end_pos_reached and not has_collision:
     # Get the pixel value at the current position
-    scene_value = constants.scene.get_at(current_pos)[:3]
+    scene_value = scene.get_at(current_pos)[:3]
     
     if log:
       print 'Col: dx: %s dy: %s  Start: %s  End: %s Cur: %s  distX: %s  distY: %s Pix: %s' % (dx, dy, start_pos, end_pos, current_pos, distance_x, distance_y, scene_value)
@@ -68,7 +65,7 @@ def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_col
         end_pos_reached = True
         
         # Get the pixel value at the current position
-        scene_value = constants.scene.get_at(end_pos)[:3]
+        scene_value = scene.get_at(end_pos)[:3]
 
         # If the pixel matches the scene_obstacle_color, there is a collision
         if scene_value == scene_obstacle_color:
@@ -79,7 +76,7 @@ def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_col
         end_pos_reached = True
         
         # Get the pixel value at the current position
-        scene_value = constants.scene.get_at(end_pos)[:3]
+        scene_value = scene.get_at(end_pos)[:3]
 
         # If the pixel matches the scene_obstacle_color, there is a collision
         if scene_value == scene_obstacle_color:
@@ -148,11 +145,11 @@ def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obs
   # Test for out of scene positions, and block
   if target_pos[0] < 0:
     has_collision = True
-  elif target_pos[0] + bounding_box_size[0] >= constants.scene.get_width() - 1:
+  elif target_pos[0] + bounding_box_size[0] >= scene.get_width() - 1:
     has_collision = True
   elif target_pos[1] < 0:
     has_collision = True
-  elif target_pos[1] + bounding_box_size[1] >= constants.scene.get_height() - 1:
+  elif target_pos[1] + bounding_box_size[1] >= scene.get_height() - 1:
     has_collision = True
   
   # Test scene, if we havent already found a collision with the scene border
@@ -190,4 +187,13 @@ def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obs
     final_pos = target_pos
 
   return final_pos
+
+
+def GetPosScrolled(pos):
+  global SCROLL_OFFSET
+  
+  scrolled_pos = [pos[0] - SCROLL_OFFSET[0], pos[1] - SCROLL_OFFSET[1]]
+  
+  return scrolled_pos
+
 
