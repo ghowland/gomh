@@ -24,7 +24,7 @@ guy0.convert_alpha()
 guy0.blit(sf_sprites, (0,0), [0, 0, sprite_size[0], sprite_size[1]])
 
 guy1 = pygame.Surface(sprite_size)
-guy1.convert_alpha() 
+guy1.convert_alpha()
 guy1.blit(sf_sprites, (0,0), [sprite_size[0] * 1, sprite_size[1] * 0, sprite_size[0], sprite_size[1]])
 
 background = pygame.Surface(screen.get_size())

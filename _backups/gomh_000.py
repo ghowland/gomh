@@ -19,7 +19,7 @@ background.fill((0, 0, 0))
 while True:
   for event in pygame.event.get(): 
     if event.type == pygame.QUIT: 
-          sys.exit(0) 
+      sys.exit(0) 
 
 
   # Render background

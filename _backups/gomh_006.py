@@ -115,7 +115,7 @@ def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_col
         if scene_value == scene_obstacle_color:
           has_collision = True
   
-  return has_collision  
+  return has_collision
 
 
 def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obstacle_color=(255,255,255), log=False):
@@ -207,9 +207,6 @@ def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obs
 
 
 while True:
-  background.blit(guy0, guy0_pos)
-  background.blit(guy1, guy1_pos)
-
   if guy0_pos[0] < guy1_pos[0]:
 	  guy0_pos = MovePosCollideWithScene(guy0_pos, [1, 0], sprite_size, scene_mask)
   elif guy0_pos[0] > guy1_pos[0]:
