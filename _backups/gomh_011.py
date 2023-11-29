@@ -75,6 +75,9 @@ def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_col
   
   NOTE: This function assumes that the bounding box has already been tested against the scene, and may call scene.get_at() in negative or over scene size, and crash
   """
+  start_pos = [int(start_pos[0]), int(start_pos[1])]
+  end_pos = [int(end_pos[0]), int(end_pos[1])]
+
   # Create deltas (differences) for the step in X and Y depending on the step and start-end positions
   # Delta X
   if start_pos[0] < end_pos[0]:
@@ -113,7 +116,7 @@ def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_col
     scene_value = scene.get_at(current_pos)[:3]
     
     if log:
-      print 'Col: dx: %s dy: %s  Start: %s  End: %s Cur: %s  distX: %s  distY: %s Pix: %s' % (dx, dy, start_pos, end_pos, current_pos, distance_x, distance_y, scene_value)
+      print('Col: dx: %s dy: %s  Start: %s  End: %s Cur: %s  distX: %s  distY: %s Pix: %s' % (dx, dy, start_pos, end_pos, current_pos, distance_x, distance_y, scene_value))
     
     # If the pixel matches the scene_obstacle_color, there is a collision
     if scene_value == scene_obstacle_color:
@@ -172,11 +175,11 @@ def MovePosCollide(pos, move, actors, bounding_box_size, scene_image, scene_obst
       has_collision = actor_rect.colliderect(target_rect)
     
       if has_collision:
-        print 'Collision: %s with %s' % (target_pos, actor)
+        print('Collision: %s with %s' % (target_pos, actor))
         actor_collision = True
         break
     else:
-      print 'Collision: Skip self: %s' % actor
+      print('Collision: Skip self: %s' % actor)
   
   # If we didnt have collisions with scene or actors, return moved position
   if not scene_collision and not actor_collision:
@@ -221,13 +224,13 @@ def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obs
     
     #TODO(g): Collision detection with scene_image
     # Make all 4 corners of the bounding box
-    corner_top_left = [target_pos[0], target_pos[1]]
-    corner_top_right = [target_pos[0] + bounding_box_size[0], target_pos[1]]
-    corner_bottom_left = [target_pos[0], target_pos[1] + bounding_box_size[1]]
-    corner_bottom_right = [target_pos[0] + bounding_box_size[0], target_pos[1] + bounding_box_size[1]]
+    corner_top_left = [int(target_pos[0]), int(target_pos[1])]
+    corner_top_right = [int(target_pos[0]) + int(bounding_box_size[0]), int(target_pos[1])]
+    corner_bottom_left = [int(target_pos[0]), int(target_pos[1]) + int(bounding_box_size[1])]
+    corner_bottom_right = [int(target_pos[0]) + int(bounding_box_size[0]), int(target_pos[1]) + int(bounding_box_size[1])]
 
     if log:
-      print ''
+      print('')
 
     # Test the bounding box, using step (N pixels) to get better resolution on obstacle collision
     if TestCollisionByPixelStep(corner_top_left, corner_top_right, step_test, scene_image, log=log):
@@ -266,7 +269,7 @@ def Draw(surface, target_surface, pos):
 while True:
   # Create list of actors for collision
   actor_pos_list = [guy0_pos, guy1_pos]
-  print 'Actors: %s' % actor_pos_list
+  print('Actors: %s' % actor_pos_list)
   
   # Enemy AI
   if guy0_pos[0] < guy1_pos[0]:
@@ -330,7 +333,7 @@ while True:
   if guy1_jump > 0:
     hit_the_roof = False
     
-    for count in range(0, guy1_jump):
+    for count in range(0, int(guy1_jump)):
       jump_pos = MovePosCollide(guy1_pos, [0, -1], actor_pos_list, sprite_size, scene_mask)
     
       # If we hit a ceiling, dont immediately cancell the jump, but reduce it quickly (gives a sense of upward inertia)
@@ -354,7 +357,7 @@ while True:
   if guy0_jump > 0:
     hit_the_roof = False
 
-    for count in range(0, guy0_jump):
+    for count in range(0, int(guy0_jump)):
       jump_pos = MovePosCollide(guy0_pos, [0, -1], actor_pos_list, sprite_size, scene_mask)
 
       # If we hit a ceiling, dont immediately cancell the jump, but reduce it quickly (gives a sense of upward inertia)

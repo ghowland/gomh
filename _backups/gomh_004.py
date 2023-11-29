@@ -58,10 +58,10 @@ def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obs
 
   #TODO(g): Collision detection with scene_image
   # Make all 4 corners of the bounding box
-  corner_top_left = [target_pos[0], target_pos[1]]
-  corner_top_right = [target_pos[0] + bounding_box_size[0], target_pos[1]]
-  corner_bottom_left = [target_pos[0], target_pos[1] + bounding_box_size[1]]
-  corner_bottom_right = [target_pos[0] + bounding_box_size[0], target_pos[1] + bounding_box_size[1]]
+  corner_top_left = [int(target_pos[0]), int(target_pos[1])]
+  corner_top_right = [int(target_pos[0]) + int(bounding_box_size[0]), int(target_pos[1])]
+  corner_bottom_left = [int(target_pos[0]), int(target_pos[1]) + int(bounding_box_size[1])]
+  corner_bottom_right = [int(target_pos[0]) + int(bounding_box_size[0]), int(target_pos[1]) + int(bounding_box_size[1])]
 
   # Get pixel values for each of the corners
   scene_top_left = scene_image.get_at(corner_top_left)[:3]

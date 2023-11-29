@@ -324,9 +324,6 @@ def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_col
   
   NOTE: This function assumes that the bounding box has already been tested against the scene, and may call scene.get_at() in negative or over scene size, and crash
   """
-  start_pos = [int(start_pos[0]), int(start_pos[1])]
-  end_pos = [int(end_pos[0]), int(end_pos[1])]
-
   # Create deltas (differences) for the step in X and Y depending on the step and start-end positions
   # Delta X
   if start_pos[0] < end_pos[0]:

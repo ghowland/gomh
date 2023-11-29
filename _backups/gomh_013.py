@@ -55,7 +55,7 @@ for row in range(0, 4):
 
 class Actor:
   def __init__(self, id, name, start_pos, image_size, image_right, image_left):
-    print 'Creating Actor: %s: %s: %s' % (id, name, start_pos)
+    print('Creating Actor: %s: %s: %s' % (id, name, start_pos))
     
     # Specified information
     self.id = id
@@ -129,7 +129,7 @@ class Actor:
     if actor.jump > 0:
       hit_the_roof = False
 
-      for count in range(0, actor.jump):
+      for count in range(0, int(actor.jump)):
         [jump_pos, collision_actor] = MovePosCollide(actor, [0, -1], ACTORS, scene_mask)
 
         # If we hit a ceiling, dont immediately cancell the jump, but reduce it quickly (gives a sense of upward inertia)
@@ -202,6 +202,9 @@ def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_col
   
   NOTE: This function assumes that the bounding box has already been tested against the scene, and may call scene.get_at() in negative or over scene size, and crash
   """
+  start_pos = [int(start_pos[0]), int(start_pos[1])]
+  end_pos = [int(end_pos[0]), int(end_pos[1])]
+
   # Create deltas (differences) for the step in X and Y depending on the step and start-end positions
   # Delta X
   if start_pos[0] < end_pos[0]:
@@ -240,7 +243,7 @@ def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_col
     scene_value = scene.get_at(current_pos)[:3]
     
     if log:
-      print 'Col: dx: %s dy: %s  Start: %s  End: %s Cur: %s  distX: %s  distY: %s Pix: %s' % (dx, dy, start_pos, end_pos, current_pos, distance_x, distance_y, scene_value)
+      print('Col: dx: %s dy: %s  Start: %s  End: %s Cur: %s  distX: %s  distY: %s Pix: %s' % (dx, dy, start_pos, end_pos, current_pos, distance_x, distance_y, scene_value))
     
     # If the pixel matches the scene_obstacle_color, there is a collision
     if scene_value == scene_obstacle_color:
@@ -352,13 +355,13 @@ def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obs
     
     #TODO(g): Collision detection with scene_image
     # Make all 4 corners of the bounding box
-    corner_top_left = [target_pos[0], target_pos[1]]
-    corner_top_right = [target_pos[0] + bounding_box_size[0], target_pos[1]]
-    corner_bottom_left = [target_pos[0], target_pos[1] + bounding_box_size[1]]
-    corner_bottom_right = [target_pos[0] + bounding_box_size[0], target_pos[1] + bounding_box_size[1]]
+    corner_top_left = [int(target_pos[0]), int(target_pos[1])]
+    corner_top_right = [int(target_pos[0]) + int(bounding_box_size[0]), int(target_pos[1])]
+    corner_bottom_left = [int(target_pos[0]), int(target_pos[1]) + int(bounding_box_size[1])]
+    corner_bottom_right = [int(target_pos[0]) + int(bounding_box_size[0]), int(target_pos[1]) + int(bounding_box_size[1])]
 
     if log:
-      print ''
+      print('')
 
     # Test the bounding box, using step (N pixels) to get better resolution on obstacle collision
     if TestCollisionByPixelStep(corner_top_left, corner_top_right, step_test, scene_image, log=log):
