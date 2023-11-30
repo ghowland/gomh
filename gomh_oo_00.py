@@ -154,37 +154,35 @@ def DoStuff(config):
         config.SCROLL_OFFSET[0] = max_scroll_x
 
     # Render background
-    Draw(config, config.scene, background, (0,0))
+    Draw(config, config.scene, config.background, (0,0))
     
     # Draw all the actors
     for actor in config.ACTORS:
-      Draw(config, actor.GetSurface(), background, actor.pos)
+      Draw(config, actor.GetSurface(), config.background, actor.pos)
     
     # Draw UI
     # Draw Player Health Bar
-    pygame.draw.rect(background, (240,240,240), pygame.rect.Rect((40, 40), (config.PLAYER_ACTOR.health * 5, 20)))
+    pygame.draw.rect(config.background, (240,240,240), pygame.rect.Rect((40, 40), (config.PLAYER_ACTOR.health * 5, 20)))
 
     # Render to screen   
-    screen.blit(background, (0,0))
+    config.screen.blit(config.background, (0,0))
     pygame.display.flip()
 
 
 def Main():
-  global screen, background, sf_sprites, scene, scene_mask, speed
-
   # Create a config that wraps everything that used to be a 
   config = Config(CONFIG_PATH)
 
   # Initialize the screen
   pygame.init()
-  screen = pygame.display.set_mode(config.SCREEN_SIZE)
+  config.screen = pygame.display.set_mode(config.SCREEN_SIZE)
   pygame.display.set_caption('Get Off My Head')
   #pygame.mouse.set_visible(0)
 
   # Create the background
-  background = pygame.Surface(screen.get_size())
-  background = background.convert()
-  background.fill((0, 0, 0))
+  config.background = pygame.Surface(config.screen.get_size())
+  config.background = config.background.convert()
+  config.background.fill((0, 0, 0))
 
   # Load the SF character sprites
   sf_sprites = LoadImage(config, 'sf_sprites.png')
