@@ -7,8 +7,8 @@ import pygame
 import math
 import random
 
-import gomh_oo_code_00
-from gomh_oo_code_00 import collision
+import gomh_oo_00_code
+from gomh_oo_00_code import collision
 
 
 class Actor:

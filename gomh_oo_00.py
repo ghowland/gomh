@@ -17,15 +17,15 @@ import random
 
 import yaml
 
-import gomh_oo_code_00
+import gomh_oo_00_code
 
-from gomh_oo_code_00.draw import *
-from gomh_oo_code_00.util import *
-from gomh_oo_code_00.actor import *
+from gomh_oo_00_code.draw import *
+from gomh_oo_00_code.util import *
+from gomh_oo_00_code.actor import *
 
 
 # Path to our config data
-CONFIG_PATH = 'gomh_oo_data_00/data.yaml'
+CONFIG_PATH = 'gomh_oo_00_data/data.yaml'
 
 
 class Config:
