@@ -54,7 +54,7 @@ def LoadImage(filename):
   
 class Actor:
   def __init__(self, id, name, start_pos, speed, image_size, image_right, image_left, starting_health=STARTING_HEALTH):
-    print 'Creating Actor: %s: %s: %s' % (id, name, start_pos)
+    print('Creating Actor: %s: %s: %s' % (id, name, start_pos))
     
     # Specified information
     self.id = id
@@ -137,7 +137,7 @@ class Actor:
     if actor.jump > 0:
       hit_the_roof = False
 
-      for count in range(0, actor.jump):
+      for count in range(0, int(actor.jump)):
         [jump_pos, collision_actor] = MovePosCollide(actor, [0, -1], ACTORS, scene_mask)
 
         # If we hit a ceiling, dont immediately cancell the jump, but reduce it quickly (gives a sense of upward inertia)
@@ -362,7 +362,7 @@ def TestCollisionByPixelStep(start_pos, end_pos, step, scene, scene_obstacle_col
     scene_value = scene.get_at(current_pos)[:3]
     
     if log:
-      print 'Col: dx: %s dy: %s  Start: %s  End: %s Cur: %s  distX: %s  distY: %s Pix: %s' % (dx, dy, start_pos, end_pos, current_pos, distance_x, distance_y, scene_value)
+      print('Col: dx: %s dy: %s  Start: %s  End: %s Cur: %s  distX: %s  distY: %s Pix: %s' % (dx, dy, start_pos, end_pos, current_pos, distance_x, distance_y, scene_value))
     
     # If the pixel matches the scene_obstacle_color, there is a collision
     if scene_value == scene_obstacle_color:
@@ -474,13 +474,13 @@ def MovePosCollideWithScene(pos, move, bounding_box_size, scene_image, scene_obs
     
     #TODO(g): Collision detection with scene_image
     # Make all 4 corners of the bounding box
-    corner_top_left = [target_pos[0], target_pos[1]]
-    corner_top_right = [target_pos[0] + bounding_box_size[0], target_pos[1]]
-    corner_bottom_left = [target_pos[0], target_pos[1] + bounding_box_size[1]]
-    corner_bottom_right = [target_pos[0] + bounding_box_size[0], target_pos[1] + bounding_box_size[1]]
+    corner_top_left = [int(target_pos[0]), int(target_pos[1])]
+    corner_top_right = [int(target_pos[0]) + int(bounding_box_size[0]), int(target_pos[1])]
+    corner_bottom_left = [int(target_pos[0]), int(target_pos[1]) + int(bounding_box_size[1])]
+    corner_bottom_right = [int(target_pos[0]) + int(bounding_box_size[0]), int(target_pos[1]) + int(bounding_box_size[1])]
 
     if log:
-      print ''
+      print('')
 
     # Test the bounding box, using step (N pixels) to get better resolution on obstacle collision
     if TestCollisionByPixelStep(corner_top_left, corner_top_right, step_test, scene_image, scene_obstacle_color=scene_obstacle_color, log=log):
@@ -517,6 +517,8 @@ def Draw(surface, target_surface, pos):
 
 
 def Main():
+  global screen, background, sf_sprites, scene, scene_mask, speed
+
   # Initialize the screen
   pygame.init()
   screen = pygame.display.set_mode(SCREEN_SIZE)
@@ -577,8 +579,6 @@ def Main():
 
   if PLAYER_ACTOR == None:
     raise Exception('WTF?  Couldnt find the player actor, you didnt specify the ID correctly or didnt add the player actor in ACTORS')
-
-  global screen, background, sf_sprites, scene, scene_mask, speed
 
   cur_time = pygame.time.get_ticks()
   while True:
