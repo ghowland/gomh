@@ -1,0 +1,21 @@
+# How much should we scale the sprites?
+sprite_scale: 0.5
+
+# Screen or window size
+screen_size: [640, 480]
+
+# Character data
+character:
+  # Starting health
+  health_starting: 12
+
+  # How many health do they gain with each kill?
+  health_gained_by_kill: 4
+
+# Movement speed
+speed_player: 5
+speed_npc: 3
+
+# How many actors do want want?
+actors_total: 6
+
