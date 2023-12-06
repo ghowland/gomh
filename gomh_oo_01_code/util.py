@@ -38,6 +38,7 @@ class Vector2:
 
       return 1
 
+
   def ToTuple(self):
     return (self.x, self.y)
 
